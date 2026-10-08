@@ -208,7 +208,10 @@
       "position": [
         592,
         656
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {},
@@ -261,7 +264,10 @@
         1264,
         640
       ],
-      "notes": "Answers strictly from the FAQ sheet — instructed to return JSON {answered, reply} and never improvise."
+      "notes": "Answers strictly from the FAQ sheet — instructed to return JSON {answered, reply} and never improvise.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -448,7 +454,10 @@
         2160,
         624
       ],
-      "notes": "appendOrUpdate on `question` — repeat asks raise the row, never duplicate it. Swaps between Unanswered and Leads via dest_tab."
+      "notes": "appendOrUpdate on `question` — repeat asks raise the row, never duplicate it. Swaps between Unanswered and Leads via dest_tab.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -466,7 +475,10 @@
         2384,
         624
       ],
-      "notes": "One alert per gap or lead — the owner sees the question and what the bot told the visitor."
+      "notes": "One alert per gap or lead — the owner sees the question and what the bot told the visitor.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -542,7 +554,10 @@
       "position": [
         592,
         848
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -579,7 +594,10 @@
         1040,
         848
       ],
-      "notes": "AI drafts proposals only — nothing enters the FAQ without the owner's copy step."
+      "notes": "AI drafts proposals only — nothing enters the FAQ without the owner's copy step.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -597,7 +615,10 @@
         1264,
         848
       ],
-      "notes": "One email per week: most-asked unanswered questions plus the AI drafts to approve."
+      "notes": "One email per week: most-asked unanswered questions plus the AI drafts to approve.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -611,7 +632,10 @@
         1488,
         848
       ],
-      "notes": "Proposals wait here until the owner approves them into the FAQ tab."
+      "notes": "Proposals wait here until the owner approves them into the FAQ tab.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -643,7 +667,10 @@
         144,
         1568
       ],
-      "notes": "Creates one spreadsheet with all four tabs in a single call."
+      "notes": "Creates one spreadsheet with all four tabs in a single call.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -782,7 +809,10 @@
       "position": [
         816,
         1280
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -795,7 +825,10 @@
       "position": [
         816,
         1472
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -808,7 +841,10 @@
       "position": [
         816,
         1664
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -821,7 +857,10 @@
       "position": [
         816,
         1856
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {

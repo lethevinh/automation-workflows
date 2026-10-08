@@ -73,7 +73,10 @@
         912
       ],
       "disabled": true,
-      "notes": "Production intake: the Sheet tab the cashier fills at close. Columns: date, shift, staff, expected_sales, counted_cash."
+      "notes": "Production intake: the Sheet tab the cashier fills at close. Columns: date, shift, staff, expected_sales, counted_cash.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -88,7 +91,10 @@
         1104
       ],
       "disabled": true,
-      "notes": "The accumulated till log — powers cumulative leak totals and repeat-offender escalation. A filter on date >= today-30d keeps the window bounded."
+      "notes": "The accumulated till log — powers cumulative leak totals and repeat-offender escalation. A filter on date >= today-30d keeps the window bounded.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {},
@@ -264,7 +270,10 @@
         720
       ],
       "disabled": true,
-      "notes": "Clean days write back to the log — the log becomes tomorrow's 30-day history."
+      "notes": "Clean days write back to the log — the log becomes tomorrow's 30-day history.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -283,7 +292,10 @@
         912
       ],
       "disabled": true,
-      "notes": "First offenses and submission gaps — the daily-operational channel."
+      "notes": "First offenses and submission gaps — the daily-operational channel.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -300,7 +312,10 @@
         1104
       ],
       "disabled": true,
-      "notes": "Repeat offenders get the urgent channel — a pattern is worth paging for, a single variance is not."
+      "notes": "Repeat offenders get the urgent channel — a pattern is worth paging for, a single variance is not.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -315,7 +330,10 @@
         1296
       ],
       "disabled": true,
-      "notes": "Malformed or duplicate rows park here instead of being dropped. Fix the row in the till log and the next sweep reprocesses it."
+      "notes": "Malformed or duplicate rows park here instead of being dropped. Fix the row in the till log and the next sweep reprocesses it.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -332,7 +350,10 @@
         1488
       ],
       "disabled": true,
-      "notes": "Exactly one owner digest per run — totals, cumulative leak, and every alert listed."
+      "notes": "Exactly one owner digest per run — totals, cumulative leak, and every alert listed.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -414,7 +435,10 @@
         912
       ],
       "disabled": true,
-      "notes": "Optional. Enable to have an LLM phrase each alert naturally and group the stated reason. When enabled, map Gmail's message to {{ $json.message.content }} instead of {{ $json.alert }}."
+      "notes": "Optional. Enable to have an LLM phrase each alert naturally and group the stated reason. When enabled, map Gmail's message to {{ $json.message.content }} instead of {{ $json.alert }}.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     },
     {
       "parameters": {
@@ -432,7 +456,10 @@
         1488
       ],
       "disabled": true,
-      "notes": "Optional. Enable to have an LLM narrate the digest in plain language. When enabled, map Telegram's text to {{ $json.message.content }}."
+      "notes": "Optional. Enable to have an LLM narrate the digest in plain language. When enabled, map Telegram's text to {{ $json.message.content }}.",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
     }
   ],
   "connections": {

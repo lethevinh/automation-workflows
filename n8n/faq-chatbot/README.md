@@ -246,9 +246,10 @@ Mechanisms that exist in `workflow.json`, by node name:
 
 Stated plainly — what is **not** here:
 
-- **No retries.** None of the 13 credentialed nodes sets `retryOnFail`; a
-  transient Sheets/Gmail/OpenAI failure fails the item and surfaces in the
-  n8n execution list.
+- **Retries on every live call.** All 13 credentialed nodes ship with
+  `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 1500` — a transient
+  Sheets/Gmail/OpenAI failure is retried automatically. Retries absorb
+  transient failures only; a persistent failure still fails the item.
 - **No error workflow.** There is no Error Trigger and no alert path for
   workflow-level failures (`settings.errorWorkflow` is not wired); runtime
   failures are visible in n8n's execution list.
@@ -263,6 +264,7 @@ credentials:
 | Owner digest per demo run | exactly 1 item — PASS |
 | Visitor turns processed | 6 happy-path items across every route — PASS |
 | Edge branches | empty-message, duplicate and bad-AI branches verified — PASS |
+| Retry coverage | 13/13 credentialed nodes (`retryOnFail`, `maxTries: 3`) — `workflow.json` |
 
 **Business outcomes** — to be supplied by the owner:
 

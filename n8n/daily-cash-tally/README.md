@@ -176,12 +176,14 @@ it is stated as absent.
   Reconcile node *after* every verdict and routed to
   `Send daily digest` — an empty branch can never starve it. It carries
   the cumulative 30-day leak total and the repeat-offender watch list.
-- **No retries, no error workflow — stated plainly.** None of the nine
-  credentialed nodes sets `retryOnFail`, and this workflow has no error
-  trigger node. A failed Sheets/Gmail/Telegram/OpenAI call surfaces as a
-  failed execution in n8n's execution list; it is not retried or paged. To
-  change that, set a retry policy on the live nodes or select an Error
-  Workflow in the workflow's settings.
+- **Retries on every live call.** All nine credentialed nodes ship with
+  `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 1500` — a transient
+  Sheets/Gmail/Telegram/OpenAI failure is retried automatically. Retries
+  absorb transient failures only; a persistent failure still ends the run.
+- **No error workflow — stated plainly.** This workflow has no error
+  trigger node. A failed execution surfaces in n8n's execution list; it is
+  not paged. To change that, select an Error Workflow in the workflow's
+  settings.
 
 ## Results & impact
 
@@ -199,6 +201,10 @@ branches in a single zero-credential run —
 
 Verified in a clean n8n container (`n8n:latest`): imports clean, all edge
 cases exercised, zero credentials attached.
+
+| Result | Source |
+|---|---|
+| Retry coverage: 9/9 credentialed nodes (`retryOnFail`, `maxTries: 3`) | `workflow.json` |
 
 **Business outcome:**
 <!-- owner-metric: hours per week saved on manual till reconciliation -->
