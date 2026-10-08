@@ -27,3 +27,6 @@ node_modules/
 .idea/
 .vscode/
 *.log
+
+# Archify working dir (candidates + receipts — regenerated on demand)
+.archify/

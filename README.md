@@ -25,9 +25,16 @@ you hire me.
 
 ## Featured workflows
 
-| Workflow | Platform | Use case | Outcome |
+| Workflow | Platform | Use case | Highlights |
 |---|---|---|---|
-| _Coming soon — first workflows are being documented._ | | | |
+| [Client Report Generator](n8n/client-report-generator/) | n8n | Weekly per-client marketing reports | Meta Ads + Google Ads + GA4, config-sheet driven, branded HTML, draft-review mode |
+| [Promise Ledger](n8n/promise-ledger/) | n8n | Track promises made to you in email | AI extraction, chase drafts with approval gate, fulfillment detection |
+| [FAQ Chatbot](n8n/faq-chatbot/) | n8n | Support chatbot that grows its own FAQ | Learns from misses — only with owner approval; lead capture |
+| [Daily Cash Tally](n8n/daily-cash-tally/) | n8n | End-of-day till reconciliation | 30-day history scoring, repeat-offender escalation, quarantine lane |
+| [Affiliate Intake](n8n/affiliate-intake/) | n8n | Screen affiliate applications | Editable rules, outreach drafts, zero-credential demo |
+
+Every n8n workflow runs its demo lane with **zero credentials** — import,
+click Test, watch it route every branch.
 
 *New workflows are added regularly — watch the repo to follow along.*
 
@@ -57,16 +64,19 @@ retainer — your choice.
 
 | Folder | Contents |
 |---|---|
-| [`n8n/`](n8n/) | Production n8n workflows — importable `workflow.json` + docs |
+| [`n8n/`](n8n/) | Production n8n workflows — `workflow.json` + archify diagrams + docs |
 | [`zapier/`](zapier/) | Zapier automations — step-by-step docs + configs |
 | [`python/`](python/) | Standalone scripts & pipelines — tested, packaged |
 | [`ai-agents/`](ai-agents/) | Agent setups — prompts, configs, orchestration |
 | [`skills/`](skills/) | Reusable agent skills (SKILL.md format) |
 | [`docs/case-studies/`](docs/case-studies/) | Deep-dives: problem → build → measured results |
 | [`examples/`](examples/) | Sample data & fixtures so you can run workflows yourself |
+| [`scripts/`](scripts/) | Repo tooling — mermaid node-graph generator, archify SVG extractor |
 
 Every workflow follows the [standard template](docs/workflow-template.md):
-problem, diagram, setup, results.
+problem, diagram, setup, results — and ships an
+[archify](https://github.com/tt-a1i/archify)-rendered architecture diagram
+(`assets/diagram.svg`, source `assets/diagram.json`).
 
 ## Tech stack
 
