@@ -1,6 +1,7 @@
 # Portfolio Upgrade Plan v2 — automation-workflows
 
-**Status:** ready for owner sign-off — not yet executed.
+**Status:** waves 0–3 executed and committed locally (not pushed); wave 4
+drafts prepared. See [§11 Decision log](#11-decision-log).
 **Supersedes:** v1 (draft). See [§0 What changed in v2](#0-what-changed-in-v2) for the corrections.
 **Repo:** https://github.com/lethevinh/automation-workflows (public, MIT)
 **Goal:** turn the repo into a job-winning portfolio for n8n / automation
@@ -118,8 +119,13 @@ Tagline direction for the root README:
 Inside `meta.instanceId` in four of five exports:
 
 ```
-REMOVED-INSTANCE-ID
+68c8fc1d…5b1c0f        (truncated on purpose — the full value was published
+                        in commit c81a929 and must be treated as burnt)
 ```
+
+> **Do not paste the full identifier into any tracked file again.** It was
+> quoted in full in an earlier revision of this document; that revision is
+> why the P-1 history rewrite matters even though the exports are now clean.
 
 - Files: `n8n/{affiliate-intake,daily-cash-tally,faq-chatbot,promise-ledger}/workflow.json`
 - Also present: real-looking workflow `id`, `versionId` (4/5), 12 `webhookId`
@@ -491,3 +497,29 @@ figures instead of estimating.
 **Repo-reproducible metrics** safe to publish without owner input: node
 counts, credentialed-node counts, retry coverage, gate counts, demo-lane
 coverage, diagram/README/demo-lane availability.
+
+---
+
+## 11. Decision log
+
+- **DONE, committed locally (not pushed):** P-1 (exports sanitized,
+  `scripts/sanitize-export.py`), P-1b (root README de-overclaimed, template
+  frozen), W1–W5 (README v2 + `.env.example` + `examples/<slug>/` per
+  workflow), P5-CI (six new guard checks + `verify-all.sh` +
+  `verify-demo-lane.py`), R-shared (index consistency), P3 (root README
+  Result column + positioning), P0c memo (`docs/error-handling-decision.md`).
+- **P0b:** APPROVED by owner 2026-10-09 — retry flags
+  (`retryOnFail`/`maxTries:3`/`waitBetweenTries:1500`) applied to existing
+  credentialed nodes only: daily-cash-tally 9/9, faq-chatbot 13/13.
+  No new nodes; affiliate-intake untouched (zero-credential positioning).
+- **History rewrite:** option A (rewrite published history) chosen as the
+  plan's recommendation; executable runbook in
+  [`docs/history-rewrite-runbook.md`](history-rewrite-runbook.md).
+  Force-push NOT yet authorised by the owner.
+- **Pending owner input:** 12 `<!-- owner-metric -->` placeholders — 11 across
+  the five workflow READMEs plus 1 in the root README
+  (`docs/workflow-template.md` mentions the marker only as guidance for future
+  workflows, so it is not one of the 12) — the four
+  `[your-...]` CTA links
+  in `README.md`, P0c lane approvals, P3b repo metadata approval, P4 client
+  context, P6 assets, P7 distribution go-ahead.

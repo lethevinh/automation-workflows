@@ -17,9 +17,15 @@ wave 1, wave 1 before wave 2, wave 2 before wave 3.
 
 Wave 0 (parallel, different files): `PROMPT P-1`, `PROMPT P-1b`
 Wave 1 (parallel, one workflow each): `PROMPT W` + its data block (`W1`…`W5`) — needs wave 0 done
-Wave 2 (parallel): `PROMPT P5-CI`, `PROMPT R-shared`, `PROMPT P0b` (owner-gated)
+Wave 2 (parallel): `PROMPT P5-CI`, `PROMPT R-shared`
+Wave 2b (parallel, dispatch now): `PROMPT P0b` (approved), `PROMPT P-1c`, `PROMPT P-1d` (dry-run only)
 Wave 3: `PROMPT P3-root`, then `PROMPT P0c` (decision memo, after P0 has landed)
 Wave 4 (owner-gated): `PROMPT P3b-meta`, `PROMPT P4-case`, `PROMPT P6-visual`, `PROMPT P7-dist`
+
+**No agent runs `git commit` or `git push`.** The orchestrator commits per
+package so parallel agents cannot race on the index; the only force-push in
+the whole plan is the history rewrite, and it stays blocked until the owner
+authorises it in writing.
 
 **New here? Run the canary first:** dispatch `PROMPT W` + the `W2
 data block — daily-cash-tally` (smallest README, 20 nodes) alone, inspect the
@@ -435,56 +441,194 @@ DO NOT: edit per-workflow READMEs or the root README.
 
 ---
 
-## PROMPT P0b — Retry policy parity *(OWNER APPROVAL REQUIRED FIRST)*
+## PROMPT P0b — Retry parity + README truth-up *(APPROVED by owner 2026-10-09)*
 
-**Wave 2 · write scope:** `n8n/daily-cash-tally/workflow.json`, `n8n/faq-chatbot/workflow.json`
+> **Superseded by `PROMPT ALL-IN-ONE` at the end of this file.** Keep this
+> block for reference only — dispatch the consolidated prompt instead.
+
+**Wave 2 · write scope:** `n8n/daily-cash-tally/workflow.json`,
+`n8n/faq-chatbot/workflow.json`, `n8n/daily-cash-tally/README.md`,
+`n8n/faq-chatbot/README.md`
 
 ```
-TASK: Apply the retry policy that already exists in two sibling workflows to
-the credentialed nodes of daily-cash-tally and faq-chatbot.
+TASK: Two parts. Part 1 applies the retry policy that already exists in two
+sibling workflows. Part 2 is mandatory: the READMEs currently state the
+opposite of what part 1 makes true, and must be updated in the same commit.
 
-RATIONALE (verified): client-report-generator has retryOnFail:true +
-maxTries:3 on 15 of 15 credentialed nodes; promise-ledger on 18 of 18;
-daily-cash-tally on 0 of 9; faq-chatbot on 0 of 13. The repo's positioning
-claims "observable and idempotent by default" — that asymmetry is
-buyer-visible.
+PART 1 — retry flags (JSON)
+RATIONALE (verified): client-report-generator has retryOnFail:true,
+maxTries:3, waitBetweenTries:1500 on 15 of 15 credentialed nodes;
+promise-ledger on 18 of 18; daily-cash-tally on 0 of 9; faq-chatbot on 0 of
+13. The repo claims "observable and idempotent by default" — that asymmetry
+is buyer-visible.
 
-CONSTRAINT: this is one of only two sanctioned edits to workflow.json.
 SCOPE BOUNDARY — read carefully:
-- This task is RETRY PARITY ON EXISTING NODES ONLY. It is not "add error
-  handling where the word error is missing".
-- affiliate-intake is OUT OF SCOPE: it has no external call at all (5 Code,
-  1 IF, 1 Merge, 1 Manual Trigger, 5 sticky notes), so there is nothing to
-  retry, and adding any alert node would give it its first credential and
-  destroy its "Zero credentials required" headline.
+- RETRY PARITY ON EXISTING NODES ONLY. It is not "add error handling where
+  the word error is missing".
+- affiliate-intake is OUT OF SCOPE: no external call exists (5 Code, 1 IF,
+  1 Merge, 1 Manual Trigger, 5 sticky notes), so there is nothing to retry,
+  and adding any alert node would give it its first credential and destroy
+  its "Zero credentials required" headline.
 - Do NOT add Error Trigger nodes, alert nodes, or any new node. That is a
-  separate decision (P0c) requiring explicit owner approval.
-- Set "retryOnFail": true and "maxTries": 3 on existing nodes that use these
-  types: n8n-nodes-base.googleSheets, n8n-nodes-base.gmail,
+  separate decision (P0c), still only a memo.
+- Set EXACTLY this triple on existing nodes of these types —
+  n8n-nodes-base.googleSheets, n8n-nodes-base.gmail,
   n8n-nodes-base.telegram, n8n-nodes-base.openAi,
-  @n8n/n8n-nodes-langchain.openAi, n8n-nodes-base.httpRequest.
+  @n8n/n8n-nodes-langchain.openAi, n8n-nodes-base.httpRequest:
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1500
+  All three fields, to match the sibling convention exactly.
 - Change NOTHING else: no new nodes, no new connections, no renames, no
-  onError/continueOnFail, no position or parameter changes.
+  onError/continueOnFail edits, no position or parameter changes.
+
+PART 2 — README truth-up (mandatory, same commit)
+Both target READMEs currently document the retry gap explicitly:
+  - n8n/daily-cash-tally/README.md — "No retries, no error workflow — stated
+    plainly" (~line 179)
+  - n8n/faq-chatbot/README.md — "No retries." and "No error workflow."
+    (~lines 248-251)
+Rewrite ONLY the retry half to the new truth (9/9 and 13/13, naming
+retryOnFail/maxTries:3/waitBetweenTries:1500). KEEP the "no error workflow"
+half exactly as-is — it is still true; P0c is a memo, not a change.
+Then add one retry-coverage row to each README's evidence table, in the same
+shape promise-ledger already uses, e.g.
+  | Retry coverage: 13/13 credentialed nodes (`retryOnFail`, `maxTries: 3`) | `workflow.json` |
+Do NOT overstate: retries absorb transient failures only; they do not alert
+on persistent ones.
 
 VERIFY (paste output):
   python3 - <<'EOF'
   import json
+  TYPES={'n8n-nodes-base.googleSheets','n8n-nodes-base.gmail',
+   'n8n-nodes-base.telegram','n8n-nodes-base.openAi',
+   '@n8n/n8n-nodes-langchain.openAi','n8n-nodes-base.httpRequest'}
   for slug,exp in [('daily-cash-tally',9),('faq-chatbot',13)]:
       d=json.load(open(f'n8n/{slug}/workflow.json'))
-      cred=[n for n in d['nodes'] if n['type'] in {
-        'n8n-nodes-base.googleSheets','n8n-nodes-base.gmail',
-        'n8n-nodes-base.telegram','n8n-nodes-base.openAi',
-        '@n8n/n8n-nodes-langchain.openAi','n8n-nodes-base.httpRequest'}]
-      r=[n for n in cred if n.get('retryOnFail') and n.get('maxTries')==3]
-      print(slug, f'{len(r)}/{len(cred)} retry-configured', 'expected', exp)
-      print('  nodes:',len(d['nodes']))
+      cred=[n for n in d['nodes'] if n['type'] in TYPES]
+      r=[n for n in cred if n.get('retryOnFail') is True
+         and n.get('maxTries')==3 and n.get('waitBetweenTries')==1500]
+      print(slug, f'{len(r)}/{len(cred)} retry-configured (expected {exp})',
+            'nodes:',len(d['nodes']))
   EOF
-Node counts must stay 20 and 40. Then re-run the mermaid drift check — the
-graph must be unchanged (no nodes added).
+Node counts must stay 20 and 40. Then run `bash scripts/verify-all.sh` — the
+mermaid graph must be unchanged (no nodes added) and the demo lane must still
+reach 0 credentialed nodes.
 
-DO NOT: proceed if the owner has not approved this change. If approval was not
-given, stop and report that the Reliability sections must instead state the
-retry gap honestly.
+DO NOT: touch docs/error-handling-decision.md — it was re-read and is
+accurate (it already says the unwired error branch "drops silently" AND
+"self-heals transient faults", and it names the 8 continueRegularOutput
+nodes correctly). Do not "fix" it.
+```
+
+---
+
+## PROMPT P-1c — Commit the redaction + close the secret-scan hole *(dispatch now)*
+
+> **Superseded by `PROMPT ALL-IN-ONE` at the end of this file.**
+
+**Wave 2 · write scope:** `docs/portfolio-upgrade-plan.md`,
+`.github/workflows/validate.yml`, `scripts/verify-all.sh`
+
+```
+TASK: Three small hygiene items left over from P-1.
+
+1. The plan doc was leaking the identifier it warns about.
+   docs/portfolio-upgrade-plan.md §4 previously quoted the FULL n8n instanceId
+   verbatim. That has already been redacted in the working tree to
+   `68c8fc1d…5b1c0f` plus a "do not paste the full value" note. VERIFY this
+   (do not re-derive the value, do not type it):
+     grep -rn '68c8fc1d1654be9d' . --exclude-dir=.git    # must print nothing
+   If it prints anything, redact it the same way.
+
+2. Close the secret-scan hole. .github/workflows/validate.yml runs the secret
+   scan with `--exclude='.env.example'`, and wave 1 added 5 more
+   .env.example files. A real key pasted into one of them would sail through.
+   Removing the exclusion has already been tested as SAFE on the current tree
+   (the placeholder values `sk-...`, `xoxb-...`, `your-n8n-instance…` do not
+   match the regex, which needs 20+ real characters). Remove the exclusion in
+   BOTH .github/workflows/validate.yml and scripts/verify-all.sh.
+   Keep the regex itself unchanged.
+
+3. Update the plan's stale status. docs/portfolio-upgrade-plan.md still says
+   "Status: ready for owner sign-off — not yet executed", which is now false:
+   waves 0-3 have landed. Set an accurate status line and append a short
+   "## 11. Decision log" section recording, factually:
+     - P-1, P-1b, W1-W5, P5-CI, R-shared, P3, P0c memo: DONE (local commits,
+       not pushed)
+     - P0b: APPROVED by owner 2026-10-09 — retry flags on existing nodes only
+     - history rewrite: option A chosen; force-push NOT yet authorised
+     - owner-metric placeholders (12) and hire-me CTA links: still pending
+       owner input
+   Do not restate any identifier value anywhere.
+
+VERIFY (paste output):
+  grep -rn '68c8fc1d1654be9d' . --exclude-dir=.git || echo "redaction: clean"
+  bash scripts/verify-all.sh 2>&1 | tail -5      # must stay all-pass
+  grep -n 'exclude=.env.example' .github/workflows/validate.yml scripts/verify-all.sh || echo "scan scope: .env.example now included"
+
+DO NOT: run `git commit`, `git push`, or any history rewrite — the
+orchestrator commits per package. Do not edit the P0c memo (it is accurate)
+or any file outside the write scope.
+```
+
+---
+
+## PROMPT P-1d — History rewrite runbook *(dry-run only; force-push is HARD-GATED)*
+
+> **Superseded by `PROMPT ALL-IN-ONE` at the end of this file.**
+
+**Wave 2 · write scope:** `docs/history-rewrite-runbook.md` (new)
+
+```
+TASK: Write docs/history-rewrite-runbook.md: an executable, owner-reviewable
+runbook for removing the leaked n8n instanceId from public git history
+(option A). You may run the DRY-RUN verification steps. You must NOT execute
+the rewrite or the force-push.
+
+CRITICAL RULE: the runbook document must NOT contain the leaked value. Refer
+to it as `<leaked-instance-id>`, and extract it at runtime from history into a
+path OUTSIDE the repo. Never write it into a tracked file — that is exactly
+how it got re-published once already.
+
+VERIFIED FACTS to build on:
+- `git filter-repo` is NOT installed on this machine (git reports
+  'filter-repo' is not a git command; the Python module is absent);
+  Homebrew is available at /opt/homebrew/bin/brew.
+- The value exists in history at commits c81a929 (added to 4 workflow.json),
+  e70fb04 era strip commit, and e916120 (adding it to the plan doc).
+- origin/main is 11+ commits behind HEAD; nothing local is pushed yet.
+- Repo has 0 stars / 0 forks (verify again with `gh api`), so a force-push
+  breaks no one.
+
+RUNBOOK MUST COVER, in order:
+1. Preconditions: working tree clean, all packages committed, `gh api
+   repos/lethevinh/automation-workflows` showing forks_count == 0.
+2. Backup: `git clone --mirror` to a dated path outside the repo
+   (~/backups/automation-workflows-YYYY-MM-DD.git) and state how to restore.
+3. Install: `brew install git-filter-repo`.
+4. Extract the value at runtime into /tmp (never into the repo), e.g. via
+   `git grep -h '"instanceId"' c81a929 -- n8n/ | sed ...` into
+   /tmp/replacements.txt, in filter-repo `--replace-text` format.
+5. The rewrite command itself, including `--replace-text /tmp/replacements.txt
+   --force`.
+6. GOTCHA: git-filter-repo REMOVES the `origin` remote — re-add it before any
+   push, or the push fails confusingly.
+7. Post-rewrite verification: `git log --all -S '<value>'` returns nothing;
+   `bash scripts/verify-all.sh` still all-pass; `git show HEAD --stat` shows
+   file contents otherwise unchanged.
+8. HARD GATE: stop here. Print the exact push command
+   (`git push --force-with-lease origin main`) but do not run it. The runbook
+   must state that the owner has to authorise the force-push explicitly and in
+   writing.
+9. Post-push caveats, stated honestly: earlier clones/forks keep the value;
+   GitHub may retain dangling objects and cached views, so open a GitHub
+   Support request to purge them; assume the value is compromised either way.
+
+VERIFY (paste output): the dry-run checks you actually ran, and a grep proving
+the new runbook contains no 64-hex identifier:
+  grep -nE '[0-9a-f]{32,}' docs/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
+
+DO NOT: run git-filter-repo, git filter-branch, git push, or any command that
+rewrites history. Do not commit.
 ```
 
 ---
@@ -634,4 +778,235 @@ Required sections:
 
 Rules: no fake engagement claims, no "as seen in" statements, do not post
 anything — this is copy the owner reviews and sends.
+```
+
+---
+
+# PROMPT ALL-IN-ONE — toàn bộ việc còn lại, chạy tuần tự trong 1 agent
+
+> Paste the **SHARED PREAMBLE** above first, then this whole block.
+> Supersedes `PROMPT P0b`, `PROMPT P-1c`, `PROMPT P-1d`.
+> One agent, sequential. Do not parallelise inside this prompt.
+
+```
+MISSION
+Finish every remaining executable item of docs/portfolio-upgrade-plan.md in one
+sequential run: the approved retry change, the leftover P-1 hygiene, the
+history-rewrite runbook (dry-run only), and the Wave-4 draft documents.
+Owner-only inputs (real metrics, contact links, force-push authorisation) are
+NOT yours to invent — leave placeholders and report them.
+
+BINDING RULES
+1. Never invent facts: no client names, testimonials, percentages, dollar
+   figures, or "roughly" numbers. Missing data becomes an explicit
+   `<!-- owner-metric: ... -->` or `<!-- owner-input: ... -->` placeholder.
+2. Never write the leaked n8n instance identifier anywhere. Do not type it, do
+   not paste it from history into any tracked file. Detect it only by pattern:
+       grep -rnE '\b[0-9a-f]{64}\b' docs/ *.md 2>/dev/null
+   If you need the value (only for the runbook's runtime extraction step),
+   pipe it from git straight into /tmp — never into the repo.
+3. Do NOT run `git commit`, `git push`, `git filter-repo`, `git filter-branch`,
+   or `gh repo edit`. The orchestrator commits per package; the force-push is
+   a separate owner-authorised action.
+4. Stay strictly inside the WRITE SCOPE below. Do not reformat or "tidy"
+   anything else. `docs/error-handling-decision.md` is accurate — do not edit
+   it.
+5. English, conventional commits wording in your report, no bot co-author.
+
+WRITE SCOPE (nothing outside this list)
+  n8n/daily-cash-tally/workflow.json
+  n8n/daily-cash-tally/README.md
+  n8n/faq-chatbot/workflow.json
+  n8n/faq-chatbot/README.md
+  docs/portfolio-upgrade-plan.md
+  .github/workflows/validate.yml
+  scripts/verify-all.sh
+  docs/history-rewrite-runbook.md            (new)
+  docs/visual-proof-guide.md                 (new)
+  docs/distribution-plan.md                  (new)
+  docs/case-studies/client-report-generator.md (new)
+
+═══════════════════════════════════════════════════════════════════
+PART A — P0b: retry parity + README truth-up  (APPROVED by owner 2026-10-09)
+═══════════════════════════════════════════════════════════════════
+A1. JSON flags. Set EXACTLY this triple on the existing nodes of these types
+    in n8n/daily-cash-tally/workflow.json and n8n/faq-chatbot/workflow.json:
+        "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1500
+    Node types in scope: n8n-nodes-base.googleSheets, n8n-nodes-base.gmail,
+    n8n-nodes-base.telegram, n8n-nodes-base.openAi,
+    @n8n/n8n-nodes-langchain.openAi, n8n-nodes-base.httpRequest.
+    Expected: daily-cash-tally 9/9, faq-chatbot 13/13.
+    RATIONALE: the two sibling workflows already do this — client-report-generator
+    15/15, promise-ledger 18/18 — so today the repo's "observable and idempotent
+    by default" claim is asymmetric.
+A2. Change NOTHING else in those files: no new nodes, no new connections, no
+    renames, no onError/continueOnFail edits, no position/parameter changes.
+    Node counts must stay 20 and 40.
+A3. SCOPE BOUNDARY: affiliate-intake is OUT OF SCOPE. It has no external call
+    at all (5 Code, 1 IF, 1 Merge, 1 Manual Trigger, 5 sticky notes), nothing
+    to retry, and adding an alert node would give it its first credential and
+    destroy its "Zero credentials required" headline. Do NOT add Error Trigger
+    nodes or alert nodes anywhere — that is P0c, still only a memo.
+A4. README truth-up — MANDATORY in the same run, because Part A makes both
+    READMEs false. Locate by text, not by line number:
+      - daily-cash-tally/README.md: "No retries, no error workflow — stated
+        plainly" (~line 179)
+      - faq-chatbot/README.md: "No retries." and "No error workflow."
+        (~lines 248-251)
+    Rewrite ONLY the retry half to the new truth (9/9 and 13/13, naming
+    retryOnFail / maxTries:3 / waitBetweenTries:1500). KEEP the "no error
+    workflow" half exactly as it is — still true. Do not overstate: retries
+    absorb transient failures only; they never alert on persistent ones.
+A5. Add one retry-coverage row to each README's evidence table, in the shape
+    promise-ledger already uses:
+      | Retry coverage: 13/13 credentialed nodes (`retryOnFail`, `maxTries: 3`) | `workflow.json` |
+A6. VERIFY and paste output:
+      python3 - <<'EOF'
+      import json
+      TYPES={'n8n-nodes-base.googleSheets','n8n-nodes-base.gmail',
+       'n8n-nodes-base.telegram','n8n-nodes-base.openAi',
+       '@n8n/n8n-nodes-langchain.openAi','n8n-nodes-base.httpRequest'}
+      for slug,exp in [('daily-cash-tally',9),('faq-chatbot',13)]:
+          d=json.load(open(f'n8n/{slug}/workflow.json'))
+          cred=[n for n in d['nodes'] if n['type'] in TYPES]
+          r=[n for n in cred if n.get('retryOnFail') is True
+             and n.get('maxTries')==3 and n.get('waitBetweenTries')==1500]
+          print(slug, f'{len(r)}/{len(cred)} (expected {exp})','nodes:',len(d['nodes']))
+      EOF
+
+═══════════════════════════════════════════════════════════════════
+PART B — verify the leaked identifier is gone from the working tree
+═══════════════════════════════════════════════════════════════════
+B1. §4 of docs/portfolio-upgrade-plan.md used to quote the full 64-hex n8n
+    instanceId. It has already been redacted to `68c8fc1d…5b1c0f` plus a
+    "do not paste the full value" note. VERIFY:
+        grep -rnE '\b[0-9a-f]{64}\b' docs/ *.md 2>/dev/null || echo "clean"
+    Must print nothing (or "clean"). If any 64-hex identifier appears in a
+    tracked doc, redact it the same way. Do not re-derive the value.
+
+═══════════════════════════════════════════════════════════════════
+PART C — close the secret-scan hole
+═══════════════════════════════════════════════════════════════════
+C1. .github/workflows/validate.yml runs the secret scan with
+    `--exclude='.env.example'`, and wave 1 added 5 more .env.example files, so
+    a real key pasted into one would pass undetected. Removing that exclusion
+    has ALREADY BEEN TESTED SAFE on the current tree: the placeholder values
+    (`sk-...`, `xoxb-...`, `your-n8n-instance…`) do not match the regex, which
+    requires 20+ real characters. Remove the exclusion in BOTH
+    .github/workflows/validate.yml and scripts/verify-all.sh. Leave the regex
+    itself unchanged.
+C2. VERIFY: grep for the exclusion string in both files; expect no match.
+
+═══════════════════════════════════════════════════════════════════
+PART D — plan status + decision log
+═══════════════════════════════════════════════════════════════════
+D1. docs/portfolio-upgrade-plan.md still says "Status: ready for owner
+    sign-off — not yet executed", now false (waves 0-3 landed). Replace with an
+    accurate status line, and append a "## 11. Decision log" section recording
+    factually:
+      - DONE, committed locally: P-1, P-1b, W1-W5, P5-CI, R-shared, P3,
+        P0c memo; not pushed
+      - P0b: APPROVED by owner 2026-10-09 — retry flags on existing nodes only
+      - history rewrite: option A chosen; force-push NOT yet authorised
+      - pending owner input: 12 owner-metric placeholders, 4 hire-me CTA links
+D2. Do not restate any identifier value anywhere. Keep the existing §0
+    corrections table intact.
+
+═══════════════════════════════════════════════════════════════════
+PART E — history-rewrite runbook (DRY RUN ONLY)
+═══════════════════════════════════════════════════════════════════
+E1. Write docs/history-rewrite-runbook.md: an executable, owner-reviewable
+    runbook for removing the leaked identifier from public git history
+    (option A). You may run the read-only verification steps. You must NOT run
+    the rewrite or the push.
+E2. CRITICAL: the runbook itself must not contain the value. Refer to it as
+    `<leaked-instance-id>` and extract it at runtime from git history straight
+    into /tmp (e.g. `git grep -h '"instanceId"' c81a929 -- n8n/ | sed ...` into
+    /tmp/replacements.txt). Never write it into a tracked file — that is how it
+    got re-published once already.
+E3. VERIFIED FACTS to build on:
+      - `git filter-repo` is NOT installed (git reports 'filter-repo' is not a
+        git command; the Python module is absent). Homebrew is at
+        /opt/homebrew/bin/brew.
+      - The value exists in history at c81a929 (4 workflow.json), the strip
+        commit that removed it, and e916120 (the plan doc).
+      - origin/main is ~11 commits behind HEAD; nothing local is pushed.
+      - The repo has 0 stars / 0 forks — re-verify with
+        `gh api repos/lethevinh/automation-workflows` before asserting it.
+E4. Runbook must cover, in order:
+      1. Preconditions: clean tree, all packages committed, forks_count == 0.
+      2. Backup: `git clone --mirror` to a dated path OUTSIDE the repo
+         (~/backups/automation-workflows-YYYY-MM-DD.git) + restore steps.
+      3. `brew install git-filter-repo`.
+      4. Runtime extraction of the value into /tmp/replacements.txt in
+         filter-repo `--replace-text` format.
+      5. The rewrite command, including `--replace-text /tmp/replacements.txt
+         --force`.
+      6. GOTCHA: git-filter-repo REMOVES the `origin` remote — re-add it before
+         any push or the push fails confusingly.
+      7. Post-rewrite verification: `git log --all -S '<value>'` empty;
+         `bash scripts/verify-all.sh` still all-pass; `git show HEAD --stat`
+         shows nothing else changed.
+      8. HARD GATE: print `git push --force-with-lease origin main` but do not
+         run it; state that the owner must authorise the force-push in writing.
+      9. Honest post-push caveats: earlier clones keep the value; GitHub may
+         retain dangling objects/cached views (open a Support request to purge);
+         assume the value is compromised regardless.
+E5. VERIFY and paste:
+      grep -nE '[0-9a-f]{32,}' docs/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
+
+═══════════════════════════════════════════════════════════════════
+PART F — Wave-4 draft documents (drafts only; publish nothing)
+═══════════════════════════════════════════════════════════════════
+F1. docs/visual-proof-guide.md — per workflow: which n8n screen to capture
+    (a Test run showing every branch, the quarantine tab, the approval queue),
+    what to annotate, exact redaction rules (no account IDs, client emails,
+    spreadsheet IDs, instance URLs), target filename
+    n8n/<slug>/assets/execution.png, and a note that the owner adds the assets.
+    Plus a 2-3 minute Loom script for client-report-generator: import → test
+    run → config sheet → draft-review seam → error path. Numbered steps, no
+    jargon.
+F2. docs/distribution-plan.md — channels with exact draft copy, target URL,
+    asset to attach, and the owner action for each: n8n community template
+    gallery, awesome-n8n PR, Reddit r/n8n, LinkedIn, Upwork portfolio entry,
+    one short blog post. UTM-tagged links back to the repo. A 2-week schedule,
+    one action per day. A pre-post redaction checklist. No fake engagement
+    claims; post nothing.
+F3. docs/case-studies/client-report-generator.md — skeleton following
+    docs/case-studies/README.md (Context → Problem → What I built → Results →
+    What I'd do differently). Fill only what the repo supports: 87 nodes, three
+    source adapters behind one contract, idempotent ledger keyed on
+    client_id + ISO week, delivery_mode=draft review seam, per-source failure
+    isolation, the Error Trigger lane (note it is inert until selected as the
+    Error Workflow in n8n settings). Leave `<!-- owner-input: ... -->` for
+    client domain/size, before-state cost, pilot scope and business result.
+    Invent nothing.
+
+═══════════════════════════════════════════════════════════════════
+PART G — repo metadata proposal (propose only, do not execute)
+═══════════════════════════════════════════════════════════════════
+G1. The GitHub description currently says "n8n templates…", which contradicts
+    the chosen positioning (production systems, not template dumps). In your
+    REPORT (not in a file), propose a replacement description, a topic list,
+    and the exact `gh repo edit` command. Do not run it — it writes to a public
+    repo and needs explicit approval.
+
+═══════════════════════════════════════════════════════════════════
+PART H — final verification
+═══════════════════════════════════════════════════════════════════
+H1. Run `bash scripts/verify-all.sh` and paste the full tail. It must end
+    "RESULT: all checks passed", with demo lanes still reaching 0 credentialed
+    nodes and node counts 13/87/20/40/56.
+H2. Report, in this order:
+      - per part A-H: status, files touched, the verify command and its output
+      - anything you had to leave as a placeholder, and why
+      - any contradiction you found between the plan and the repo
+      - the Part G proposal
+      - an explicit statement that you did not commit, push, or rewrite history
+
+HARD GATES — stop and report instead of proceeding if:
+  - a Part A change would require adding or removing a node
+  - a file in the write scope has diverged from what this prompt describes
+  - you cannot complete a part without inventing a fact
+  - any instruction would require git commit/push/filter-repo/gh repo edit
 ```
