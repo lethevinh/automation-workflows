@@ -20,7 +20,7 @@ You will see a **START HERE** sticky top-left — it repeats these steps on the 
 
 Scroll to the bottom of the canvas → **Lane D**.
 
-Hover the orange trigger node **"SETUP — press play on this node once"** → press the **play button** on that node.
+Find the **`Create FAQ spreadsheet`** node in Lane D → press the **play button** on that node.
 
 It will:
 

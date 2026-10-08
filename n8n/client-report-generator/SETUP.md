@@ -112,8 +112,8 @@ ever fails.
 
 ## API versions
 
-Pinned against the providers' sunset schedules on 2026-10-07 (see
-`spec.md` for sources): Meta Marketing API **v26.0** (v21.0 retires
+Pinned against the providers' sunset schedules on 2026-10-07:
+Meta Marketing API **v26.0** (v21.0 retires
 2027-01-21), Google Ads API **v25** (v18 sunset; v22 sunsets October
 2026), GA4 Data API **v1beta** (current). When a provider sunsets the
 pinned version, update the version segment in the fetch node's URL.

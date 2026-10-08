@@ -21,8 +21,8 @@ Attach the 3 credentials to the nodes that ask for them
 
 ## Step 3 — Run the setup lane once
 
-Press **play** on the orange **`SETUP — press play on this node once`**
-trigger (bottom lane). It creates a Google Sheet named
+Press **play** on the **`Create promise ledger`** node (bottom lane — it
+has no incoming edges; run it via its play button). It creates a Google Sheet named
 **Promise Ledger — Follow-ups** with two tabs, headers, and example rows:
 
 - `Commitments` — the ledger: `dedupe_key` (person+promise hash),
