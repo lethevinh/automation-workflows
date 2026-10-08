@@ -1,0 +1,187 @@
+# Promise Ledger — Track Promises Made to You, Chase Before They Go Cold
+
+**Platform:** n8n · **Category:** Founder Ops / Follow-up
+**Outcome:** "I'll send it Friday" stops disappearing. Every promise lands
+in a ledger, drafts its own chase email, and closes itself when the person
+delivers.
+
+![Workflow diagram](assets/diagram.svg)
+
+*Architecture diagram — source [`assets/diagram.json`](assets/diagram.json), rendered with [archify](https://github.com/tt-a1i/archify)*
+
+**Node graph** — generated from `workflow.json` (see `scripts/render-mermaid.py`):
+
+<!-- mermaid:start -->
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","fontSize":"13px","background":"#FFFFFF","primaryColor":"#FFFFFF","primaryBorderColor":"#CBD5E1","primaryTextColor":"#0F172A","lineColor":"#94A3B8","tertiaryColor":"#FFFFFF"}}}%%
+flowchart TB
+    n0(["When clicking 'Test workflow'"])
+    n1["Demo inbox emails"]
+    n2["Demo extract (mirrors AI contract)"]
+    n3["Run digest"]
+    n4(["Hourly tick (sweep at 08:00)"])
+    n5["Workflow Config"]
+    n6{"Lane entry"}
+    n7["Fetch new inbox emails"]
+    n8["Build extraction prompt"]
+    n9["Extract promises (AI)"]
+    n10["Parse commitment verdict"]
+    n11{"Route intake"}
+    n12["Merge write streams"]
+    n13{"Live write?"}
+    n14{"Write kind?"}
+    n15[("Write ledger row")]
+    n16[("Find open row")]
+    n17["Pick open row"]
+    n18{"Row matched?"}
+    n19[("Mark done in ledger")]
+    n20["Label email processed"]
+    n21["Demo: record ledger write"]
+    n22{"Skip is live?"}
+    n23["Compose alert"]
+    n24{"Alert is live?"}
+    n25["Email owner: intake alert"]
+    n26[("Read ledger rows")]
+    n27["Classify aging"]
+    n28["Sweep digest"]
+    n29{"Digest worth sending?"}
+    n30["Email owner: daily digest"]
+    n31{"Route sweep"}
+    n32["Merge chase streams"]
+    n33["Build chase prompt"]
+    n34["Draft chase email (AI)"]
+    n35["Parse chase draft"]
+    n36[("Queue chase for approval")]
+    n37["Notify owner of queue"]
+    n38[("Mark chased in ledger")]
+    n39["Escalate to owner"]
+    n40[("Mark escalated in ledger")]
+    n41[("Create promise ledger")]
+    n42["Seed headers and examples"]
+    n43{"Route by tab"}
+    n44["Columns for Commitments"]
+    n45["Columns for Chase-Queue"]
+    n46[("Write Commitments tab")]
+    n47[("Write Chase-Queue tab")]
+    n48["Print sheet id + next step"]
+    n0 --> n1
+    n1 --> n2
+    n2 --> n11
+    n2 --> n3
+    n4 --> n5
+    n5 --> n6
+    n6 -->|"0"| n26
+    n6 -->|"1"| n7
+    n7 --> n8
+    n8 --> n9
+    n9 --> n10
+    n10 --> n11
+    n11 -->|"0"| n12
+    n11 -->|"1"| n12
+    n11 -->|"2"| n22
+    n11 -->|"3"| n23
+    n12 --> n13
+    n13 -->|"true"| n14
+    n13 -->|"false"| n21
+    n14 -->|"0"| n16
+    n14 -->|"1"| n15
+    n16 --> n17
+    n17 --> n18
+    n18 -->|"true"| n19
+    n18 -->|"false"| n20
+    n15 --> n20
+    n19 --> n20
+    n23 --> n24
+    n24 --> n20
+    n24 --> n25
+    n22 --> n20
+    n26 --> n27
+    n27 --> n31
+    n27 --> n28
+    n28 --> n29
+    n29 --> n30
+    n31 -->|"0"| n32
+    n31 -->|"1"| n32
+    n31 -->|"2"| n39
+    n32 --> n33
+    n33 --> n34
+    n34 --> n35
+    n35 --> n36
+    n36 --> n37
+    n37 --> n38
+    n39 --> n40
+    n41 --> n42
+    n42 --> n43
+    n43 -->|"0"| n44
+    n43 -->|"1"| n45
+    n44 --> n46
+    n45 --> n47
+    n46 --> n48
+    n47 --> n48
+    classDef trigger fill:#EFF6FF,stroke:#3B82F6,color:#0F172A
+    classDef logic fill:#ECFDF5,stroke:#10B981,color:#0F172A
+    classDef decide fill:#FFFBEB,stroke:#F59E0B,color:#0F172A
+    classDef store fill:#F5F3FF,stroke:#8B5CF6,color:#0F172A
+    classDef ai fill:#FDF2F8,stroke:#EC4899,color:#0F172A
+    classDef external fill:#F8FAFC,stroke:#64748B,color:#0F172A
+    classDef gate fill:#FEF2F2,stroke:#EF4444,color:#0F172A
+    classDef disabled opacity:.55,stroke-dasharray:4 3
+    class n0,n4 trigger
+    class n1,n2,n3,n5,n8,n10,n12,n17,n21,n23,n27,n28,n32,n33,n35,n42,n44,n45,n48 logic
+    class n6,n11,n13,n14,n18,n22,n24,n29,n31,n43 decide
+    class n15,n16,n19,n26,n36,n38,n40,n41,n46,n47 store
+    class n9,n34 ai
+    class n7,n20,n25,n30,n37,n39 external
+```
+<!-- mermaid:end -->
+
+## The problem
+
+People promise you things over email — documents, payments, intros — and
+then go quiet. Tracking them means digging through your inbox; chasing them
+means remembering who owes what, and for how long.
+
+## The solution
+
+- **Hourly intake** reads your inbox and extracts every concrete promise
+  (who, what, due when — relative dates like "by Thursday" resolve
+  correctly) into a Google Sheets `Commitments` ledger with live status:
+  `open → reminded → chased → escalated → done`.
+- **08:00 daily sweep** classifies open promises: due today → gentle
+  reminder draft; overdue → firmer follow-up; 3+ days overdue → escalates
+  straight to you.
+- **Approval gate** — drafts land in a `Chase-Queue` tab; you approve
+  before anything sends, so the automation can never embarrass you with a
+  wrong chase.
+- **Fulfillment detection** — when the person finally delivers, their
+  reply closes the ledger row automatically.
+- **Per-person aging digest** — see at a glance who habitually leaves
+  commitments hanging.
+- **One-click setup lane** provisions the spreadsheet itself.
+
+## Stack & credentials
+
+56 nodes — Gmail, Google Sheets, OpenAI, Switch, Merge, Schedule Trigger,
+Code.
+
+Production needs Gmail + Google Sheets + OpenAI credentials. The demo lane
+needs none. See [SETUP.md](SETUP.md) (~5 min).
+
+## Why it's different
+
+Most "commitment tracker" templates scan your *sent* mail to track promises
+*you* made. This one works the inbound direction — promises made *to* you —
+and adds the missing half: outbound chasing with an approval gate,
+fulfillment detection, and per-person aging.
+
+## Verification
+
+Container pilot on `n8n:latest` (zero credentials): digest 1 item, happy
+path 5 items, missing-data/duplicate/failure alerts 3/3 — PASS. Live OpenAI
+extraction verified against a real key: relative due dates resolved,
+newsletters skipped, fulfillment replies close the right ledger row.
+
+---
+
+*Need something like this for your business?
+[Contact me](../../README.md#hire-me)*

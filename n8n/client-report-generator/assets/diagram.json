@@ -1,0 +1,209 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "Client Report Generator \u2014 Weekly Per-Client Reports from One Config Sheet",
+  "subtitle": "n8n workflow \u00b7 Meta Ads + Google Ads + GA4 \u00b7 config-driven \u00b7 idempotent",
+  "output": ".archify/workflow-client-report-generator-20261008-1010/client-report-generator.html",
+  "quality_profile": "showcase"
+ },
+ "lanes": [
+  {
+   "id": "main",
+   "label": "Weekly pipeline"
+  },
+  {
+   "id": "ops",
+   "label": "Setup & ops"
+  }
+ ],
+ "phases": [
+  {
+   "id": "cfg",
+   "label": "Config",
+   "fromCol": 0,
+   "toCol": 1
+  },
+  {
+   "id": "build",
+   "label": "Fetch + compute",
+   "fromCol": 2,
+   "toCol": 4,
+   "variant": "emphasis"
+  },
+  {
+   "id": "deliv",
+   "label": "Deliver + ledger",
+   "fromCol": 5,
+   "toCol": 5,
+   "variant": "dashed"
+  }
+ ],
+ "mainPath": [
+  "sched",
+  "cfgx",
+  "fetch",
+  "delta",
+  "compose",
+  "deliver"
+ ],
+ "nodes": [
+  {
+   "id": "sched",
+   "lane": "main",
+   "col": 0,
+   "type": "external",
+   "label": "Monday schedule",
+   "sublabel": "weekly run",
+   "width": 140
+  },
+  {
+   "id": "cfgx",
+   "lane": "main",
+   "col": 1,
+   "type": "database",
+   "label": "Config + expand",
+   "sublabel": "one row per client",
+   "width": 140
+  },
+  {
+   "id": "fetch",
+   "lane": "main",
+   "col": 2,
+   "type": "cloud",
+   "label": "Fetch sources",
+   "sublabel": "Meta \u00b7 GAds \u00b7 GA4",
+   "tag": "parallel",
+   "width": 140
+  },
+  {
+   "id": "delta",
+   "lane": "main",
+   "col": 3,
+   "type": "backend",
+   "label": "Normalize + deltas",
+   "sublabel": "deterministic WoW",
+   "tag": "AI never invents numbers",
+   "width": 160
+  },
+  {
+   "id": "compose",
+   "lane": "main",
+   "col": 4,
+   "type": "messagebus",
+   "label": "Compose report",
+   "sublabel": "AI prose + branded HTML",
+   "width": 150
+  },
+  {
+   "id": "deliver",
+   "lane": "main",
+   "col": 5,
+   "type": "messagebus",
+   "label": "Deliver",
+   "sublabel": "Gmail send/draft \u00b7 Slack",
+   "tag": "review seam",
+   "width": 150
+  },
+  {
+   "id": "setup",
+   "lane": "ops",
+   "col": 0,
+   "type": "backend",
+   "label": "SETUP lane",
+   "sublabel": "one-click workbook",
+   "tag": "run once",
+   "width": 150
+  },
+  {
+   "id": "ledger",
+   "lane": "ops",
+   "col": 4,
+   "type": "database",
+   "label": "Reports ledger",
+   "sublabel": "client_id + ISO week skip",
+   "tag": "idempotent",
+   "width": 170
+  },
+  {
+   "id": "digest",
+   "lane": "ops",
+   "col": 5,
+   "type": "external",
+   "label": "Run digest email",
+   "sublabel": "anomaly flags \u00b7 failures",
+   "width": 160
+  }
+ ],
+ "edges": [
+  {
+   "id": "e1",
+   "from": "sched",
+   "to": "cfgx",
+   "variant": "default"
+  },
+  {
+   "id": "e2",
+   "from": "setup",
+   "to": "cfgx",
+   "label": "provisions",
+   "variant": "dashed",
+   "role": "branch"
+  },
+  {
+   "id": "e3",
+   "from": "cfgx",
+   "to": "fetch",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e4",
+   "from": "fetch",
+   "to": "delta",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5",
+   "from": "delta",
+   "to": "compose",
+   "variant": "default"
+  },
+  {
+   "id": "e6",
+   "from": "compose",
+   "to": "deliver",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e7",
+   "from": "deliver",
+   "to": "ledger",
+   "label": "append",
+   "variant": "dashed"
+  },
+  {
+   "id": "e8",
+   "from": "ledger",
+   "to": "digest",
+   "variant": "emphasis"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Config-driven, not hardcoded",
+   "items": [
+    "Adding a client = one sheet row \u2014 sources, channels, thresholds are cells",
+    "delivery_mode=draft files a Gmail draft instead of sending"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Failure-isolated",
+   "items": [
+    "One bad source alerts without blocking other clients",
+    "Ledger upsert keeps re-runs in the same week from double-sending"
+   ]
+  }
+ ]
+}

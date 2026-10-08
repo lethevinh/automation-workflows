@@ -1,0 +1,236 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "Daily Cash Tally \u2014 Cash-Leak Monitor with Escalation",
+  "subtitle": "n8n workflow \u00b7 30-day history scoring \u00b7 repeat-offender escalation",
+  "output": ".archify/workflow-daily-cash-tally-20261008-1010/daily-cash-tally.html",
+  "quality_profile": "showcase"
+ },
+ "lanes": [
+  {
+   "id": "engine",
+   "label": "Intake & reconcile"
+  },
+  {
+   "id": "out",
+   "label": "Outcomes & owner"
+  }
+ ],
+ "phases": [
+  {
+   "id": "load",
+   "label": "Load",
+   "fromCol": 0,
+   "toCol": 1
+  },
+  {
+   "id": "recon",
+   "label": "Reconcile + score",
+   "fromCol": 2,
+   "toCol": 3,
+   "variant": "emphasis"
+  },
+  {
+   "id": "notify",
+   "label": "Notify",
+   "fromCol": 4,
+   "toCol": 4,
+   "variant": "dashed"
+  }
+ ],
+ "mainPath": [
+  "sched",
+  "today",
+  "recon",
+  "route",
+  "clean"
+ ],
+ "nodes": [
+  {
+   "id": "sched",
+   "lane": "engine",
+   "col": 0,
+   "type": "external",
+   "label": "Nightly schedule",
+   "sublabel": "or manual demo run",
+   "width": 130
+  },
+  {
+   "id": "today",
+   "lane": "engine",
+   "col": 1,
+   "type": "database",
+   "label": "Today entries",
+   "sublabel": "date \u00b7 shift \u00b7 staff \u00b7 counted",
+   "width": 150,
+   "yOffset": 96
+  },
+  {
+   "id": "hist",
+   "lane": "engine",
+   "col": 1,
+   "type": "database",
+   "label": "30-day history",
+   "sublabel": "prior reconciliation log",
+   "width": 150
+  },
+  {
+   "id": "recon",
+   "lane": "engine",
+   "col": 2,
+   "type": "backend",
+   "label": "Reconcile",
+   "sublabel": "dedupe \u00b7 tolerance \u00b7 gaps \u00b7 repeats",
+   "tag": "RULES block",
+   "width": 180
+  },
+  {
+   "id": "route",
+   "lane": "engine",
+   "col": 3,
+   "type": "backend",
+   "label": "Route outcome",
+   "sublabel": "5-way switch",
+   "width": 130
+  },
+  {
+   "id": "clean",
+   "lane": "out",
+   "col": 3,
+   "type": "database",
+   "label": "Results log",
+   "sublabel": "in-tolerance days",
+   "width": 140
+  },
+  {
+   "id": "quar",
+   "lane": "out",
+   "col": 2,
+   "type": "database",
+   "label": "Quarantine",
+   "sublabel": "malformed / duplicate",
+   "width": 150
+  },
+  {
+   "id": "ai",
+   "lane": "out",
+   "col": 3,
+   "type": "backend",
+   "label": "AI phrasing",
+   "sublabel": "words for alerts + digest",
+   "tag": "optional \u00b7 off",
+   "width": 160,
+   "yOffset": 96
+  },
+  {
+   "id": "alerts",
+   "lane": "out",
+   "col": 4,
+   "type": "security",
+   "label": "Owner alerts",
+   "sublabel": "Gmail first offense \u00b7 Telegram repeat",
+   "tag": "escalation",
+   "width": 190
+  },
+  {
+   "id": "digest",
+   "lane": "out",
+   "col": 4,
+   "type": "external",
+   "label": "Daily digest",
+   "sublabel": "cumulative 30-day leak",
+   "width": 150,
+   "yOffset": 96
+  }
+ ],
+ "edges": [
+  {
+   "id": "e1",
+   "from": "sched",
+   "to": "today",
+   "variant": "default"
+  },
+  {
+   "id": "e2",
+   "from": "today",
+   "to": "recon",
+   "variant": "emphasis",
+   "fromSide": "right",
+   "toSide": "left"
+  },
+  {
+   "id": "e3",
+   "from": "hist",
+   "to": "recon",
+   "label": "prior 30 days",
+   "variant": "dashed",
+   "fromSide": "right",
+   "toSide": "left"
+  },
+  {
+   "id": "e4",
+   "from": "recon",
+   "to": "route",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5",
+   "from": "route",
+   "to": "clean",
+   "label": "in tolerance",
+   "variant": "default",
+   "toSide": "top"
+  },
+  {
+   "id": "e8",
+   "from": "recon",
+   "to": "quar",
+   "label": "malformed / dup",
+   "variant": "dashed",
+   "role": "error",
+   "fromSide": "bottom",
+   "toSide": "top"
+  },
+  {
+   "id": "e6",
+   "from": "route",
+   "to": "alerts",
+   "label": "any offense",
+   "variant": "security"
+  },
+  {
+   "id": "e9",
+   "from": "alerts",
+   "to": "digest",
+   "label": "always included",
+   "variant": "emphasis",
+   "toSide": "top"
+  },
+  {
+   "id": "e10",
+   "from": "ai",
+   "to": "alerts",
+   "label": "phrases",
+   "variant": "dashed"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Why it catches real leaks",
+   "items": [
+    "Each variance is scored against 30 days of history \u2014 a pattern escalates, a blip doesn't",
+    "Malformed rows quarantine for reprocessing instead of dropping silently"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Zero-credential demo",
+   "items": [
+    "Service nodes ship disabled and pass demo data through untouched",
+    "Enable Sheets/Gmail/Telegram and attach credentials to go live"
+   ]
+  }
+ ]
+}

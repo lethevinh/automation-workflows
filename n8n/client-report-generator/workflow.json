@@ -1,0 +1,3022 @@
+{
+  "createdAt": "2026-10-07T00:00:00.000Z",
+  "updatedAt": "2026-10-07T00:00:00.000Z",
+  "id": "client-report-generator-0001",
+  "name": "Generate weekly client reports from a config sheet with Google Sheets, Meta Ads, Google Ads, GA4 and OpenAI",
+  "nodes": [
+    {
+      "id": "sticky-overview",
+      "name": "sticky-overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        -760
+      ],
+      "parameters": {
+        "content": "# Weekly client reports — one sheet drives every client, source and send\n\n```\n┌────────┐──▶┌────────┐──▶┌───────┐──▶┌───────────┐──▶┌────────┐──▶┌────────┐\n│ config │──▶│ expand │──▶│ fetch │──▶│ normalize │──▶│ deltas │──▶│ dedupe │\n└────────┘──▶└────────┘──▶└───────┘──▶└───────────┘──▶└────────┘──▶└───┬────┘\n                                                                       │\n             ┌────────┐◀──┌────────┐◀──┌───────┐◀──┌────────┐◀──┌──────▼────┐\n             │ digest │◀──│ ledger │◀──│ sinks │◀──│ render │◀──│ narrative │\n             └────────┘◀──└────────┘◀──└───────┘◀──└────────┘◀──└───────────┘\n```\n\n**Who it's for:** agencies and freelancers who write the same per-client performance report every week.\n\n**How it works:** every Monday the workflow reads a `config` tab — one row per client, one column per data source (`src_meta_ads`, `src_google_ads`, `src_ga4`) and per delivery sink (`sink_gmail`, `sink_slack`), plus per-client `delivery_mode` (`send`/`draft`), brand cells (`brand_name`, `brand_color`, `brand_logo_url`) and `alert_threshold_pct`. Enabled sources are fetched and normalized into one metric contract; a Code node computes week-over-week deltas deterministically (the AI never does math) and flags metrics whose |delta| crosses the client's threshold; the AI writes the prose around the precomputed table; the report renders as a per-client branded HTML email — sent, or filed as a Gmail draft for owner review — and/or posts to the client's Slack channel, then logged to a `reports` tab keyed `client_id+ISO week` so re-runs in the same week are skipped as duplicates. Every run ends with one digest emailed to the operator.\n\n**Setup:** run the orange SETUP lane once to create the workbook, paste the printed `spreadsheet_id` into **Workflow Config**, attach credentials (Gmail + Sheets + OpenAI nodes, plus a Header Auth / Custom Auth credential on each HTTP fetch/post node — API tokens never live in the artifact or in env vars), set your address in **Operator email**, fill the `config` tab, activate. **Test workflow** runs a four-client demo with zero credentials.\n\n**Contract** — side_effects: Gmail sends/drafts, Slack posts, `reports`-tab upserts, one operator digest email per run. rollback: set `enabled` to `no` in the row, or deactivate the workflow; delete the `reports` row to allow a re-send.",
+        "height": 580,
+        "width": 700,
+        "color": 4
+      }
+    },
+    {
+      "id": "sticky-lane-a",
+      "name": "sticky-lane-a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        -160
+      ],
+      "parameters": {
+        "content": "### Lane A — weekly engine (Monday 09:00, workflow timezone)\n\nSchedule → Workflow Config → read the `config` tab + `reports` ledger → validate each row → expand one item per enabled source → source adapters → deterministic WoW deltas → one report table per client → dedupe on `client_id+ISO week` → AI prose → enabled sinks → upsert the ledger → one run digest emailed to the operator.\n\nA bad config row alerts instead of stopping the run — fix the cell and re-run; nothing was written for skipped rows.",
+        "height": 240,
+        "width": 420,
+        "color": 7
+      }
+    },
+    {
+      "id": "sticky-adapters",
+      "name": "sticky-adapters",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -600
+      ],
+      "parameters": {
+        "content": "### Source adapters — gated fetch + normalize pairs\n\nEach branch is `live?` → real fetch (HTTP, token via the node's genericAuth credential picker) or a zero-credential demo adapter. Adapters emit the contract row `{client_id, report_date, metric, value, prev_value}`; the shared `Compute WoW deltas` Code node adds `delta_pct` — the AI only ever sees the finished table.\n\n**Extension dock:** `Source route`'s fallback output is a named attach point — add a Switch rule and a fetch+normalize pair emitting the contract row, then wire it into `Merge sources`. No engine changes needed.",
+        "height": 180,
+        "width": 440,
+        "color": 7
+      }
+    },
+    {
+      "id": "sticky-sinks",
+      "name": "sticky-sinks",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4020,
+        -600
+      ],
+      "parameters": {
+        "content": "### Sinks — deliver + record\n\n`Fan out sinks` emits one item per enabled sink; each sink is `live`-gated (real send) or demo-mirrored. The Gmail sink splits once more on the `delivery_mode` cell: `send` mails the branded HTML report, `draft` files it into Gmail drafts for owner review. Successful sends and drafts are collapsed per report and upserted to `reports` on `dedupe_key` — a re-run in the same ISO week hits the dedupe check first and is skipped as duplicate.\n\n**Contract** — side_effects: client-facing Gmail sends/drafts, Slack posts, `reports` upserts. rollback: delete the `reports` row to permit re-send; retract the email/post manually — sent mail cannot be un-sent.",
+        "height": 200,
+        "width": 460,
+        "color": 7
+      }
+    },
+    {
+      "id": "sticky-demo",
+      "name": "sticky-demo",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        560
+      ],
+      "parameters": {
+        "content": "### Lane C — demo (no credentials)\n\n\"Test workflow\" feeds the committed `config-default` fixture through the real engine: four clients — a Meta outage (still reported via its other sources), an already-sent row (duplicate alert), a missing-recipients row (missing-data alert), and a disabled row (skipped).\n\n**Side effects:** none — demo items carry `live:false` and never reach a credential node (the operator digest email is gated on `live` too).",
+        "height": 200,
+        "width": 420,
+        "color": 7
+      }
+    },
+    {
+      "id": "sticky-error",
+      "name": "sticky-error",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1400,
+        1700
+      ],
+      "parameters": {
+        "content": "### Error lane — instance-level catch-all\n\nThis workflow carries an `Error Trigger` entry point: point Settings → Error workflow of this workflow (or any sibling workflow) at it, and every unhandled failure lands here — formatted and emailed to the operator. **Set the address in the `Operator email` node** (it cannot come from Workflow Config — that node never runs inside an error-triggered execution). Per-node failures are still handled in-lane (`continueErrorOutput` → alert → digest).\n\n**Contract** — side_effects: one Gmail send per failed execution. rollback: detach the error workflow in Settings.",
+        "height": 200,
+        "width": 420,
+        "color": 7
+      }
+    },
+    {
+      "id": "sticky-setup",
+      "name": "sticky-setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        1420
+      ],
+      "parameters": {
+        "content": "### Lane D — first-run setup (run once)\n\nPress play on the orange trigger: creates the `Weekly Client Reports` workbook with `config` + `reports` tabs, seeded headers and one example row each, then prints the `spreadsheet_id` — paste it into **Workflow Config**, fill `config`, delete this lane.\n\n**Side effects:** creates one Google Sheet and writes two seed rows; undo by deleting the created spreadsheet in Drive.",
+        "height": 200,
+        "width": 420,
+        "color": 7
+      }
+    },
+    {
+      "id": "test-trigger",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        640
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "demo-config",
+      "name": "Demo config (fixture)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        640
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Demo config — a stand-in for the 'config' sheet tab, generated verbatim\n// from fixtures/config-default.json by build_workflow.py. Do not edit here:\n// edit the fixture. Every src_*/sink_* flag plus the delivery_mode, brand_*\n// and alert_threshold_pct columns is a cell a user would edit.\n// Fixture-only fields: 'sim_error_source' fakes a source outage, 'already_sent'\n// seeds the dedupe check as if the report row already existed.\nconst CLIENTS = [\n  {\n    \"client_id\": \"acme\",\n    \"client_name\": \"Acme Retail\",\n    \"enabled\": \"yes\",\n    \"src_meta_ads\": \"yes\",\n    \"src_google_ads\": \"yes\",\n    \"src_ga4\": \"yes\",\n    \"sink_gmail\": \"yes\",\n    \"sink_slack\": \"yes\",\n    \"recipients_email\": \"team@example.com\",\n    \"slack_channel\": \"#acme-weekly\",\n    \"meta_ad_account_id\": \"act_demo_acme\",\n    \"google_ads_customer_id\": \"demo-acme-1234\",\n    \"ga4_property_id\": \"demo-acme-ga4\",\n    \"sim_error_source\": \"meta_ads\"\n  },\n  {\n    \"client_id\": \"boutique\",\n    \"client_name\": \"Boutique Hotels\",\n    \"enabled\": \"yes\",\n    \"src_meta_ads\": \"no\",\n    \"src_google_ads\": \"yes\",\n    \"src_ga4\": \"yes\",\n    \"sink_gmail\": \"yes\",\n    \"sink_slack\": \"no\",\n    \"recipients_email\": \"gm@example.net\",\n    \"slack_channel\": \"\",\n    \"meta_ad_account_id\": \"act_demo_boutique\",\n    \"google_ads_customer_id\": \"demo-btq-5678\",\n    \"ga4_property_id\": \"demo-btq-ga4\",\n    \"already_sent\": \"yes\"\n  },\n  {\n    \"client_id\": \"coachlee\",\n    \"client_name\": \"Coach Lee\",\n    \"enabled\": \"yes\",\n    \"src_meta_ads\": \"no\",\n    \"src_google_ads\": \"no\",\n    \"src_ga4\": \"yes\",\n    \"sink_gmail\": \"yes\",\n    \"sink_slack\": \"no\",\n    \"recipients_email\": \"\",\n    \"slack_channel\": \"\",\n    \"meta_ad_account_id\": \"\",\n    \"google_ads_customer_id\": \"\",\n    \"ga4_property_id\": \"demo-lee-ga4\"\n  },\n  {\n    \"client_id\": \"pausedco\",\n    \"client_name\": \"Paused Co\",\n    \"enabled\": \"no\",\n    \"src_meta_ads\": \"no\",\n    \"src_google_ads\": \"no\",\n    \"src_ga4\": \"yes\",\n    \"sink_gmail\": \"yes\",\n    \"sink_slack\": \"no\",\n    \"recipients_email\": \"ops@example.org\",\n    \"slack_channel\": \"\",\n    \"meta_ad_account_id\": \"\",\n    \"google_ads_customer_id\": \"\",\n    \"ga4_property_id\": \"demo-paused-ga4\"\n  }\n];\nreturn CLIENTS.map((row) => ({ json: { ...row, live: false } }));\n"
+      },
+      "notes": "Mirrors the live 'config' tab row-for-row. Generated from fixtures/config-default.json — regenerate, never hand-edit."
+    },
+    {
+      "id": "on-workflow-error",
+      "name": "On workflow error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        1900
+      ],
+      "parameters": {},
+      "notes": "Attach this workflow as the error workflow (Settings → Error workflow) so any unhandled failure emails the operator."
+    },
+    {
+      "id": "operator-email",
+      "name": "Operator email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        1760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// SET YOUR OPERATOR EMAIL HERE — the one address for operator-facing\n// mail: the error alert AND the run-digest email both send to it.\n// It is its own node because Workflow Config does not run inside an\n// error-triggered execution: a `$('Workflow Config')` lookup would throw.\n// Keep it as a literal, or point it at anything that resolves here.\nreturn [{ json: { to: 'owner@example.com' } }];\n"
+      },
+      "notes": "EDIT ME: the operator address — receives failure alerts and the weekly run digest."
+    },
+    {
+      "id": "format-error-alert",
+      "name": "Format error alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        1760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Error Trigger payload -> one alert email body for the operator. Runs\n// only inside an error-triggered execution: 'Operator email' also fires\n// from the digest gate on live runs, and there 'On workflow error' has no\n// data — the lookup doubles as the lane guard (no error payload -> zero\n// items -> 'Email owner: workflow error' stays silent). The trigger item\n// carries the real error context; the address comes from the {to} item\n// 'Operator email' emitted (Workflow Config cannot be referenced here).\nlet trigger;\ntry { trigger = $('On workflow error').first().json; } catch (e) { return []; }\nconst e = trigger.execution || {};\nconst w = trigger.workflow || {};\nconst err = (e.error && e.error.message) || 'workflow error';\nconst node = (e.error && e.error.lastNodeExecuted) || 'unknown';\nconst to = $input.first().json.to || 'owner@example.com';\nreturn [{ json: {\n  to,\n  subject: `Weekly report workflow failed: ${w.name || 'client-report-generator'}`,\n  body: `Execution ${e.id || '?'} failed at node ${node}: ${err}\\nExecution: ${e.url || 'n/a'}`,\n} }];\n"
+      },
+      "notes": "One item per failed execution — names the workflow, node and execution link."
+    },
+    {
+      "id": "email-owner-error",
+      "name": "Email owner: workflow error",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -460,
+        1760
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "Only fires inside an error-triggered execution — never in the demo lane."
+    },
+    {
+      "id": "weekly-tick",
+      "name": "Weekly tick — Monday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1160,
+        -40
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "notes": "Monday 09:00 in the workflow timezone (Settings → Timezone, shipped GMT)."
+    },
+    {
+      "id": "workflow-config",
+      "name": "Workflow Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The ONLY node you edit after running the setup lane once.\n//   sheet_id — printed by the SETUP lane (or your own workbook with\n//              'config' and 'reports' tabs)\n// The operator email lives in the dedicated 'Operator email' node\n// (Workflow Config cannot be referenced from an error-triggered\n// execution, and it feeds the run digest too).\nreturn {\n  json: {\n    sheet_id: 'PASTE_SPREADSHEET_ID_HERE',\n  },\n};\n"
+      },
+      "notes": "Spreadsheet id. Every Sheets node resolves its documentId from here; the operator email lives in 'Operator email'."
+    },
+    {
+      "id": "read-config-tab",
+      "name": "Read config tab",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        -140
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "config",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "One row per client; src_*/sink_* cells gate which branches execute."
+    },
+    {
+      "id": "read-reports-ledger",
+      "name": "Read reports ledger",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        80
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reports",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "Sent-report ledger — feeds the dedupe key set."
+    },
+    {
+      "id": "collect-sent-keys",
+      "name": "Collect sent keys",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// One item: the set of already-sent dedupe keys (client_id+ISO week).\n// Read lazily by 'Dedupe check' so a missing/empty ledger can never crash\n// the demo lane — the lookup is wrapped there.\nreturn [{\n  json: {\n    sent_keys: $input.all().map((i) => i.json.dedupe_key).filter(Boolean),\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "validate-clients",
+      "name": "Validate clients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Per config row: disabled -> skipped; no usable sink or no enabled\n// source -> missing-data alert; otherwise 'configured'. Demo rows carry\n// live:false; sheet rows default to live.\nconst on = (v) => String(v).toLowerCase() === 'yes';\nconst r = $json;\nconst live = r.live !== false;\nconst hasGmail = on(r.sink_gmail) && String(r.recipients_email || '').trim() !== '';\nconst hasSlack = on(r.sink_slack) && String(r.slack_channel || '').trim() !== '';\nif (!on(r.enabled)) {\n  return { json: { ...r, status: 'skipped', reason: 'enabled is not yes in the config tab', live } };\n}\nif (!hasGmail && !hasSlack) {\n  return { json: { ...r, status: 'alerted', kind: 'missing-data', alert: `${r.client_id}: no usable sink — set sink_gmail + recipients_email or sink_slack + slack_channel in the config tab`, live } };\n}\nif (!on(r.src_meta_ads) && !on(r.src_google_ads) && !on(r.src_ga4)) {\n  return { json: { ...r, status: 'alerted', kind: 'missing-data', alert: `${r.client_id}: no source enabled — set src_meta_ads, src_google_ads or src_ga4 to yes`, live } };\n}\nreturn { json: { ...r, status: 'configured', live } };\n"
+      },
+      "notes": "Bad config rows become alerts — they never reach the engine."
+    },
+    {
+      "id": "expand-sources",
+      "name": "Expand enabled sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// One item per (client, enabled source) — the cell-level gate:\n// a config flag flipped off simply never expands into a fetch. All-items\n// mode because one client fans out to N source requests.\nconst on = (v) => String(v).toLowerCase() === 'yes';\nconst out = [];\nfor (const item of $input.all()) {\n  const r = item.json;\n  if (r.status !== 'configured') { out.push({ json: r }); continue; }\n  const sources = ['meta_ads', 'google_ads', 'ga4'].filter((s) => on(r['src_' + s]));\n  for (const s of sources) {\n    out.push({ json: {\n      kind: 'source-request',\n      client_id: r.client_id,\n      client_name: r.client_name,\n      source: s,\n      report_date: $now.toISODate(),\n      sinks: { gmail: on(r.sink_gmail), slack: on(r.sink_slack) },\n      recipients_email: r.recipients_email || '',\n      slack_channel: r.slack_channel || '',\n      meta_ad_account_id: r.meta_ad_account_id || '',\n      google_ads_customer_id: r.google_ads_customer_id || '',\n      ga4_property_id: r.ga4_property_id || '',\n      delivery_mode: String(r.delivery_mode || '').toLowerCase() === 'draft' ? 'draft' : 'send',\n      brand_name: String(r.brand_name || '').trim(),\n      brand_color: String(r.brand_color || '').trim(),\n      brand_logo_url: String(r.brand_logo_url || '').trim(),\n      alert_threshold_pct: (() => {\n        const t = parseFloat(r.alert_threshold_pct);\n        return Number.isFinite(t) ? t : null;\n      })(),\n      live: r.live === true,\n      already_sent: String(r.already_sent || '').toLowerCase() === 'yes',\n      sim_error_source: r.sim_error_source || '',\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Fan-out is pure config — no workflow edit ever toggles a source."
+    },
+    {
+      "id": "has-source",
+      "name": "Has source?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -60,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "has-source-c",
+              "leftValue": "={{ !!$json.source }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Alert/skip passthroughs go straight to the run digest merge."
+    },
+    {
+      "id": "source-route",
+      "name": "Source route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        160,
+        -140
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "source-route-r0",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "meta_ads",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "meta_ads"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "source-route-r1",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "google_ads",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "google_ads"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "source-route-r2",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "ga4",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ga4"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "dock — new source"
+        }
+      },
+      "notes": "One output per source adapter; the renamed fallback is the extension dock."
+    },
+    {
+      "id": "meta-live",
+      "name": "Meta Ads live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "meta-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-meta",
+      "name": "Fetch Meta Ads insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        -400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v26.0/{{ $json.meta_ad_account_id }}/insights",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "spend,impressions,clicks"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_14d"
+            },
+            {
+              "name": "time_increment",
+              "value": "7"
+            }
+          ]
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueErrorOutput",
+      "notes": "Two weekly buckets (last_14d + time_increment 7) give value + prev_value in one call. Attach a Header Auth credential: name 'Authorization', value 'Bearer <Meta access token>'. Marketing API v26.0 (v21.0 retires 2027-01-21 — see spec.md)."
+    },
+    {
+      "id": "normalize-meta",
+      "name": "Normalize Meta Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        -400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Meta insights rows (two 7-day buckets) -> adapter contract rows.\n// All-items mode: one fetch response fans out to N metric rows. pairedItem\n// recovers the matching request from the live? gate (fetch is 1:1).\nconst reqs = $('Meta Ads live?').all().map((i) => i.json);\nconst out = [];\nfor (const item of $input.all()) {\n  const req = reqs[(item.pairedItem && item.pairedItem.item) || 0] || {};\n  const rows = item.json.data || [];\n  const cur = rows[rows.length - 1] || {};\n  const prev = rows.length > 1 ? rows[rows.length - 2] : {};\n  for (const metric of ['spend', 'impressions', 'clicks']) {\n    out.push({ json: {\n      kind: 'metric', client_id: req.client_id, client_name: req.client_name,\n      source: 'meta_ads', report_date: req.report_date, metric,\n      value: Number(cur[metric] || 0), prev_value: Number(prev[metric] || 0),\n      sinks: req.sinks, recipients_email: req.recipients_email,\n      slack_channel: req.slack_channel, live: true, already_sent: req.already_sent,\n      delivery_mode: req.delivery_mode, brand_name: req.brand_name,\n      brand_color: req.brand_color, brand_logo_url: req.brand_logo_url,\n      alert_threshold_pct: req.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Emits the adapter contract row; WoW math happens downstream in one place."
+    },
+    {
+      "id": "demo-meta",
+      "name": "Demo Meta Ads fetch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        -260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Demo adapter — emits the same contract rows the live 'meta_ads' adapter\n// would, from the committed metrics fixture (injected at generation time).\n// 'sim_error_source' on the config row fakes a source outage — the alert\n// proves a failing source never blocks other clients. All-items mode:\n// one request item fans out to N metric rows.\nconst METRICS = {\n  \"acme\": [\n    {\n      \"metric\": \"spend\",\n      \"value\": 840,\n      \"prev_value\": 700,\n      \"expected_delta_pct\": 20.0\n    },\n    {\n      \"metric\": \"impressions\",\n      \"value\": 41200,\n      \"prev_value\": 40000,\n      \"expected_delta_pct\": 3.0\n    },\n    {\n      \"metric\": \"clicks\",\n      \"value\": 950,\n      \"prev_value\": 1000,\n      \"expected_delta_pct\": -5.0\n    }\n  ],\n  \"boutique\": [\n    {\n      \"metric\": \"spend\",\n      \"value\": 210,\n      \"prev_value\": 300,\n      \"expected_delta_pct\": -30.0\n    },\n    {\n      \"metric\": \"clicks\",\n      \"value\": 120,\n      \"prev_value\": 150,\n      \"expected_delta_pct\": -20.0\n    }\n  ]\n};\nconst out = [];\nfor (const item of $input.all()) {\n  const it = item.json;\n  if (it.sim_error_source === 'meta_ads') {\n    out.push({ json: {\n      status: 'alerted', kind: 'failure',\n      alert: `meta_ads fetch failed for ${it.client_id} — simulated outage; other sources and clients are unaffected`,\n      client_id: it.client_id, live: false,\n    } });\n    continue;\n  }\n  for (const m of (METRICS[it.client_id] || [])) {\n    out.push({ json: {\n      kind: 'metric', client_id: it.client_id, client_name: it.client_name,\n      source: 'meta_ads', report_date: it.report_date, metric: m.metric,\n      value: m.value, prev_value: m.prev_value,\n      sinks: it.sinks, recipients_email: it.recipients_email,\n      slack_channel: it.slack_channel, live: false, already_sent: it.already_sent,\n      delivery_mode: it.delivery_mode, brand_name: it.brand_name,\n      brand_color: it.brand_color, brand_logo_url: it.brand_logo_url,\n      alert_threshold_pct: it.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Zero-credential mirror of the live adapter — same contract output."
+    },
+    {
+      "id": "gads-live",
+      "name": "Google Ads live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "gads-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-gads",
+      "name": "Fetch Google Ads metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        -140
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v25/customers/{{ $json.google_ads_customer_id }}/googleAds:searchStream",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\"query\":\"SELECT segments.week, metrics.cost_micros, metrics.clicks, metrics.conversions FROM campaign WHERE segments.date DURING LAST_14_DAYS\"}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueErrorOutput",
+      "notes": "GAQL over last 14 days split by week. Attach a Custom Auth credential whose JSON carries BOTH headers: {\"headers\":{\"Authorization\":\"Bearer <access token>\",\"developer-token\":\"<developer token>\"}}. Google Ads API v25 (v18 sunset — see spec.md)."
+    },
+    {
+      "id": "normalize-gads",
+      "name": "Normalize Google Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Google Ads searchStream rows -> adapter contract rows (cost in dollars).\n// All-items mode: one fetch response fans out to N metric rows. pairedItem\n// recovers the matching request from the live? gate (fetch is 1:1).\nconst reqs = $('Google Ads live?').all().map((i) => i.json);\nconst out = [];\nfor (const item of $input.all()) {\n  const req = reqs[(item.pairedItem && item.pairedItem.item) || 0] || {};\n  const results = (item.json[0] && item.json[0].results) || item.json.results || [];\n  const byWeek = {};\n  for (const r of results) {\n    const w = (r.segments && r.segments.week) || 'unknown';\n    const m = r.metrics || {};\n    byWeek[w] = byWeek[w] || { spend: 0, clicks: 0, conversions: 0 };\n    byWeek[w].spend += Number(m.cost_micros || 0) / 1e6;\n    byWeek[w].clicks += Number(m.clicks || 0);\n    byWeek[w].conversions += Number(m.conversions || 0);\n  }\n  const weeks = Object.keys(byWeek).sort();\n  const cur = byWeek[weeks[weeks.length - 1]] || {};\n  const prev = byWeek[weeks[weeks.length - 2]] || {};\n  for (const metric of ['spend', 'clicks', 'conversions']) {\n    out.push({ json: {\n      kind: 'metric', client_id: req.client_id, client_name: req.client_name,\n      source: 'google_ads', report_date: req.report_date, metric,\n      value: Math.round((cur[metric] || 0) * 100) / 100,\n      prev_value: Math.round((prev[metric] || 0) * 100) / 100,\n      sinks: req.sinks, recipients_email: req.recipients_email,\n      slack_channel: req.slack_channel, live: true, already_sent: req.already_sent,\n      delivery_mode: req.delivery_mode, brand_name: req.brand_name,\n      brand_color: req.brand_color, brand_logo_url: req.brand_logo_url,\n      alert_threshold_pct: req.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Emits the adapter contract row; WoW math happens downstream in one place."
+    },
+    {
+      "id": "demo-gads",
+      "name": "Demo Google Ads fetch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Demo adapter — emits the same contract rows the live 'google_ads' adapter\n// would, from the committed metrics fixture (injected at generation time).\n// 'sim_error_source' on the config row fakes a source outage — the alert\n// proves a failing source never blocks other clients. All-items mode:\n// one request item fans out to N metric rows.\nconst METRICS = {\n  \"acme\": [\n    {\n      \"metric\": \"spend\",\n      \"value\": 840,\n      \"prev_value\": 700,\n      \"expected_delta_pct\": 20.0\n    },\n    {\n      \"metric\": \"conversions\",\n      \"value\": 45,\n      \"prev_value\": 50,\n      \"expected_delta_pct\": -10.0\n    }\n  ],\n  \"boutique\": [\n    {\n      \"metric\": \"clicks\",\n      \"value\": 320,\n      \"prev_value\": 280,\n      \"expected_delta_pct\": 14.3\n    },\n    {\n      \"metric\": \"conversions\",\n      \"value\": 22,\n      \"prev_value\": 20,\n      \"expected_delta_pct\": 10.0\n    }\n  ]\n};\nconst out = [];\nfor (const item of $input.all()) {\n  const it = item.json;\n  if (it.sim_error_source === 'google_ads') {\n    out.push({ json: {\n      status: 'alerted', kind: 'failure',\n      alert: `google_ads fetch failed for ${it.client_id} — simulated outage; other sources and clients are unaffected`,\n      client_id: it.client_id, live: false,\n    } });\n    continue;\n  }\n  for (const m of (METRICS[it.client_id] || [])) {\n    out.push({ json: {\n      kind: 'metric', client_id: it.client_id, client_name: it.client_name,\n      source: 'google_ads', report_date: it.report_date, metric: m.metric,\n      value: m.value, prev_value: m.prev_value,\n      sinks: it.sinks, recipients_email: it.recipients_email,\n      slack_channel: it.slack_channel, live: false, already_sent: it.already_sent,\n      delivery_mode: it.delivery_mode, brand_name: it.brand_name,\n      brand_color: it.brand_color, brand_logo_url: it.brand_logo_url,\n      alert_threshold_pct: it.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Zero-credential mirror of the live adapter — same contract output."
+    },
+    {
+      "id": "ga4-live",
+      "name": "GA4 live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "ga4-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-ga4",
+      "name": "Fetch GA4 report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://analyticsdata.googleapis.com/v1beta/properties/{{ $json.ga4_property_id }}:runReport",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\"dateRanges\":[{\"startDate\":\"8daysAgo\",\"endDate\":\"yesterday\"},{\"startDate\":\"15daysAgo\",\"endDate\":\"8daysAgo\"}],\"metrics\":[{\"name\":\"sessions\"},{\"name\":\"conversions\"}],\"dimensions\":[{\"name\":\"dateRange\"}]}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueErrorOutput",
+      "notes": "Two date ranges: this week vs previous week. Attach a Header Auth credential: name 'Authorization', value 'Bearer <GA4 access token>'."
+    },
+    {
+      "id": "normalize-ga4",
+      "name": "Normalize GA4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// GA4 runReport rows -> adapter contract rows (dateRange dimension picks\n// the week bucket: 'date_range_0' = this week, 'date_range_1' = previous).\n// All-items mode: one fetch response fans out to N metric rows. pairedItem\n// recovers the matching request from the live? gate (fetch is 1:1).\nconst reqs = $('GA4 live?').all().map((i) => i.json);\nconst pairs = [['sessions', 0], ['conversions', 1]];\nconst out = [];\nfor (const item of $input.all()) {\n  const req = reqs[(item.pairedItem && item.pairedItem.item) || 0] || {};\n  const rows = item.json.rows || [];\n  const sum = (bucket, idx) => rows\n    .filter((r) => r.dimensionValues && r.dimensionValues[0].value === bucket)\n    .reduce((acc, r) => acc + Number(r.metricValues[idx].value || 0), 0);\n  for (const [metric, idx] of pairs) {\n    out.push({ json: {\n      kind: 'metric', client_id: req.client_id, client_name: req.client_name,\n      source: 'ga4', report_date: req.report_date, metric,\n      value: sum('date_range_0', idx), prev_value: sum('date_range_1', idx),\n      sinks: req.sinks, recipients_email: req.recipients_email,\n      slack_channel: req.slack_channel, live: true, already_sent: req.already_sent,\n      delivery_mode: req.delivery_mode, brand_name: req.brand_name,\n      brand_color: req.brand_color, brand_logo_url: req.brand_logo_url,\n      alert_threshold_pct: req.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Emits the adapter contract row; WoW math happens downstream in one place."
+    },
+    {
+      "id": "demo-ga4",
+      "name": "Demo GA4 fetch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Demo adapter — emits the same contract rows the live 'ga4' adapter\n// would, from the committed metrics fixture (injected at generation time).\n// 'sim_error_source' on the config row fakes a source outage — the alert\n// proves a failing source never blocks other clients. All-items mode:\n// one request item fans out to N metric rows.\nconst METRICS = {\n  \"acme\": [\n    {\n      \"metric\": \"sessions\",\n      \"value\": 1240,\n      \"prev_value\": 1100,\n      \"expected_delta_pct\": 12.7\n    },\n    {\n      \"metric\": \"conversions\",\n      \"value\": 31,\n      \"prev_value\": 30,\n      \"expected_delta_pct\": 3.3\n    }\n  ],\n  \"boutique\": [\n    {\n      \"metric\": \"sessions\",\n      \"value\": 640,\n      \"prev_value\": 640,\n      \"expected_delta_pct\": 0.0\n    }\n  ],\n  \"coachlee\": [\n    {\n      \"metric\": \"sessions\",\n      \"value\": 95,\n      \"prev_value\": 100,\n      \"expected_delta_pct\": -5.0\n    }\n  ],\n  \"pausedco\": [\n    {\n      \"metric\": \"sessions\",\n      \"value\": 50,\n      \"prev_value\": 40,\n      \"expected_delta_pct\": 25.0\n    }\n  ]\n};\nconst out = [];\nfor (const item of $input.all()) {\n  const it = item.json;\n  if (it.sim_error_source === 'ga4') {\n    out.push({ json: {\n      status: 'alerted', kind: 'failure',\n      alert: `ga4 fetch failed for ${it.client_id} — simulated outage; other sources and clients are unaffected`,\n      client_id: it.client_id, live: false,\n    } });\n    continue;\n  }\n  for (const m of (METRICS[it.client_id] || [])) {\n    out.push({ json: {\n      kind: 'metric', client_id: it.client_id, client_name: it.client_name,\n      source: 'ga4', report_date: it.report_date, metric: m.metric,\n      value: m.value, prev_value: m.prev_value,\n      sinks: it.sinks, recipients_email: it.recipients_email,\n      slack_channel: it.slack_channel, live: false, already_sent: it.already_sent,\n      delivery_mode: it.delivery_mode, brand_name: it.brand_name,\n      brand_color: it.brand_color, brand_logo_url: it.brand_logo_url,\n      alert_threshold_pct: it.alert_threshold_pct,\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "notes": "Zero-credential mirror of the live adapter — same contract output."
+    },
+    {
+      "id": "extension-dock",
+      "name": "Extension dock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// EXTENSION DOCK — Source route's fallback output lands here. To add a\n// source: add a Switch rule for its name, hang a fetch + normalize pair off\n// the new output emitting the contract row\n//   {kind:'metric', client_id, client_name, source, report_date, metric,\n//    value, prev_value, sinks, recipients_email, slack_channel, live,\n//    delivery_mode, brand_name, brand_color, brand_logo_url,\n//    alert_threshold_pct}\n// then wire it into Merge sources (raise its input count). The engine —\n// deltas, grouping, prose, sinks, dedupe — needs no changes.\nreturn $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    status: 'skipped',\n    reason: `unhandled source '${item.json.source}' — dock a new adapter on this output`,\n  },\n}));\n"
+      },
+      "notes": "Attach point for new source adapters — see spec.md 'Adapter contract'."
+    },
+    {
+      "id": "compose-source-alert",
+      "name": "Compose source alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Fetch-node error outputs land here (continueErrorOutput). One failing\n// source becomes one failure alert — the other clients' items were\n// never in this node's input, so they cannot be blocked.\nconst e = $json.error;\nconst msg = typeof e === 'string' ? e : ((e && e.message) || 'fetch failed');\nreturn { json: {\n  status: 'alerted', kind: 'failure',\n  alert: `${$json.source || 'source'} fetch failed for ${$json.client_id || 'unknown'}: ${msg}`,\n  client_id: $json.client_id || 'unknown', live: $json.live === true,\n} };\n"
+      },
+      "notes": "Turns a dropped source fetch into a named failure alert."
+    },
+    {
+      "id": "merge-sources",
+      "name": "Merge sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        -140
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 7
+      },
+      "notes": "append — every adapter branch joins before the shared engine; no double-run."
+    },
+    {
+      "id": "compute-deltas",
+      "name": "Compute WoW deltas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Deterministic math, never the AI's job: delta_pct = (value-prev)/prev.\n// prev_value 0 -> delta null (not infinite); rendered 'n/a' downstream.\nconst it = $json;\nif (it.kind !== 'metric') return { json: it };\nconst cur = Number(it.value) || 0;\nconst prev = Number(it.prev_value) || 0;\nconst delta = prev === 0 ? (cur === 0 ? 0 : null)\n                         : Math.round(((cur - prev) / prev) * 1000) / 10;\nreturn { json: { ...it, delta_pct: delta } };\n"
+      },
+      "notes": "The only place numbers are computed — fixtures pin expected values."
+    },
+    {
+      "id": "group-report",
+      "name": "Group report table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Metric rows -> one 'report-metrics' item per client. Alerts and skips\n// pass straight through to the digest merge. Anomaly flags are computed\n// here, deterministically: a metric is flagged when the row's\n// alert_threshold_pct cell is a number and |delta_pct| >= threshold\n// (delta null — prev week was zero — is never a flag). The AI only\n// narrates the flags; it never decides them.\nconst out = [];\nconst byClient = {};\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (j.kind !== 'metric') { out.push({ json: j }); continue; }\n  const k = j.client_id;\n  if (!byClient[k]) {\n    byClient[k] = {\n      status: 'report-metrics', client_id: j.client_id,\n      client_name: j.client_name, report_date: j.report_date,\n      metrics: [], sinks: j.sinks, recipients_email: j.recipients_email,\n      slack_channel: j.slack_channel, live: j.live === true,\n      already_sent: j.already_sent === true,\n      delivery_mode: j.delivery_mode === 'draft' ? 'draft' : 'send',\n      brand_name: j.brand_name || '', brand_color: j.brand_color || '',\n      brand_logo_url: j.brand_logo_url || '',\n      alert_threshold_pct: j.alert_threshold_pct,\n      flags: [],\n    };\n  }\n  const flagged = j.alert_threshold_pct != null && j.delta_pct != null\n    && Math.abs(j.delta_pct) >= j.alert_threshold_pct;\n  byClient[k].metrics.push({\n    source: j.source, metric: j.metric, value: j.value,\n    prev_value: j.prev_value, delta_pct: j.delta_pct, flagged,\n  });\n  if (flagged) {\n    byClient[k].flags.push({\n      source: j.source, metric: j.metric, delta_pct: j.delta_pct,\n    });\n  }\n}\nfor (const k of Object.keys(byClient)) {\n  byClient[k].flag_count = byClient[k].flags.length;\n  out.push({ json: byClient[k] });\n}\nreturn out;\n"
+      },
+      "notes": "Re-groups the flat metric stream into per-client report items."
+    },
+    {
+      "id": "ready-to-report",
+      "name": "Ready to report?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "ready-to-report-c",
+              "leftValue": "={{ $json.status === 'report-metrics' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Alerts and skips bypass the report build entirely."
+    },
+    {
+      "id": "dedupe-check",
+      "name": "Dedupe check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2020,
+        -220
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Idempotency gate: dedupe_key = client_id + ISO week (kkkk-Wxx) — the\n// report is a weekly artifact, so a re-run in the SAME week (not just the\n// same day) is a duplicate. Live reads the 'reports' ledger collected at\n// run start (lazy + guarded: an empty ledger is 'nothing sent', never a\n// crash); demo rows carry 'already_sent' instead.\nconst it = $json;\nconst week = `${$now.weekYear}-W${String($now.weekNumber).padStart(2, '0')}`;\nconst key = `${it.client_id}__${week}`;\nlet dup = false;\nif (it.live === true) {\n  let sent = [];\n  try { sent = $('Collect sent keys').first().json.sent_keys || []; }\n  catch (e) { sent = []; }\n  dup = sent.includes(key);\n} else {\n  dup = it.already_sent === true;\n}\nreturn { json: { ...it, dedupe_key: key, report_week: week, is_duplicate: dup } };\n"
+      },
+      "notes": "client_id+ISO week (kkkk-Wxx) — re-runs in the same week are skipped as duplicates."
+    },
+    {
+      "id": "already-sent",
+      "name": "Already sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "already-sent-c",
+              "leftValue": "={{ !!$json.is_duplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "compose-duplicate-alert",
+      "name": "Compose duplicate alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: {\n  status: 'alerted', kind: 'duplicate',\n  alert: `${$json.client_id}: report ${$json.dedupe_key} already sent this week — skipped (idempotent re-run)`,\n  client_id: $json.client_id, live: $json.live === true,\n} };\n"
+      }
+    },
+    {
+      "id": "build-report-prompt",
+      "name": "Build report prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The AI only ever sees this precomputed table — it writes prose, never\n// computes. System prompt forbids inventing numbers. Flagged anomalies are\n// listed verbatim from the deterministic flags — the AI narrates them,\n// it never decides them.\nconst it = $json;\nconst rows = it.metrics.map((m) =>\n  `| ${m.source} | ${m.metric} | ${m.value} | ${m.prev_value} | ${m.delta_pct === null ? 'n/a' : m.delta_pct + '%'}${m.flagged ? ' FLAGGED' : ''} |`);\nconst table = [\n  '| source | metric | this week | last week | WoW |',\n  '| --- | --- | --- | --- | --- |',\n  ...rows,\n].join('\\n');\nconst flagLines = (it.flags || []).map((f) =>\n  `- ${f.source} ${f.metric}: ${f.delta_pct}% WoW (threshold ${it.alert_threshold_pct}%)`);\nconst flagBlock = flagLines.length\n  ? `\\n\\nFlagged anomalies (|WoW| >= ${it.alert_threshold_pct}%):\\n${flagLines.join('\\n')}`\n  : '';\nreturn { json: {\n  ...it,\n  metric_table: table,\n  messages: [\n    { role: 'system', content: 'You write short client-facing weekly marketing report summaries. Every number is already computed in the table below — quote it, never recalculate or invent figures. Metrics marked FLAGGED crossed the client alert threshold — narrate them as anomalies calling for attention, using the listed numbers only. Note the strongest win, the biggest risk, and one recommended next step. 3-5 sentences, plain language.' },\n    { role: 'user', content: `Client: ${it.client_name}\\nWeek ending: ${it.report_date}\\n\\n${table}${flagBlock}` },\n  ],\n} };\n"
+      },
+      "notes": "Precomputed metric table in — the model adds prose only."
+    },
+    {
+      "id": "prose-live",
+      "name": "Prose live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2680,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "prose-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "write-narrative",
+      "name": "Write report narrative (AI)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        2900,
+        -220
+      ],
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "model": "gpt-4o-mini",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "={{ $json.messages[0].content }}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.messages[1].content }}"
+            }
+          ]
+        },
+        "simplifyOutput": true,
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "Prose only — all numbers come from the precomputed table in the prompt."
+    },
+    {
+      "id": "parse-narrative",
+      "name": "Parse narrative",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        -220
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The OpenAI node replaces the item with its response — restore the\n// report fields from the prompt node (paired item) and keep the prose.\nconst src = $('Build report prompt').item.json;\nconst msg = $json.message;\nconst narrative = (msg && msg.content) || '';\nreturn { json: { ...src, narrative } };\n"
+      }
+    },
+    {
+      "id": "demo-narrative",
+      "name": "Demo narrative",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2900,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Deterministic stand-in for the AI node — same {narrative} contract,\n// zero credentials, and it only quotes the precomputed deltas.\nconst it = $json;\nconst up = it.metrics.filter((m) => (m.delta_pct || 0) > 0).map((m) => `${m.metric} up ${m.delta_pct}%`);\nconst down = it.metrics.filter((m) => (m.delta_pct || 0) < 0).map((m) => `${m.metric} down ${Math.abs(m.delta_pct)}%`);\nconst flagText = (it.flags || []).length\n  ? ` Flagged anomalies: ${it.flags.map((f) => `${f.source}/${f.metric} ${f.delta_pct}%`).join('; ')}.`\n  : '';\nconst narrative = `${it.client_name}: this week ${up.join('; ') || 'metrics held flat'}${down.length ? '; watch ' + down.join('; ') : ''}.${flagText} (demo prose — no AI call)`;\nreturn { json: { ...it, narrative } };\n"
+      },
+      "notes": "Mirror of the AI contract for the demo lane."
+    },
+    {
+      "id": "render-report",
+      "name": "Render report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// {subject, body_markdown, body_html, recipients} — the sink contract\n// every delivery adapter consumes. body_html renders the per-client brand\n// cells (brand_name / brand_color / brand_logo_url) into an email-safe\n// header: inline styles only, and an absent logo simply renders no <img> —\n// the layout never depends on it.\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')\n  .replace(/\"/g, '&quot;');\nconst it = $json;\nconst brand = it.brand_name || it.client_name;\nconst color = /^#[0-9a-fA-F]{3,8}$/.test(it.brand_color || '') ? it.brand_color : '#33475b';\nconst logo = (it.brand_logo_url || '').trim();\nconst subject = `${brand} — weekly report (${it.report_date})`;\nconst flagNote = (m) => m.flagged ? ' <strong style=\"color:#b91c1c;\">FLAGGED</strong>' : '';\nconst metricRows = it.metrics.map((m) =>\n  `<tr${m.flagged ? ' style=\"background:#fff4e5;\"' : ''}><td style=\"padding:6px 10px;border:1px solid #e3e3e3;\">${esc(m.source)}</td><td style=\"padding:6px 10px;border:1px solid #e3e3e3;\">${esc(m.metric)}</td><td style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">${m.value}</td><td style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">${m.prev_value}</td><td style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">${m.delta_pct === null ? 'n/a' : m.delta_pct + '%'}${flagNote(m)}</td></tr>`);\nconst flagItems = (it.flags || []).map((f) =>\n  `<li>${esc(f.source)} ${esc(f.metric)}: ${f.delta_pct}% WoW</li>`).join('');\nconst flagSection = flagItems\n  ? `<div style=\"margin:14px 0;padding:10px 14px;background:#fff4e5;border-left:4px solid #d97706;\"><strong>Flagged anomalies</strong> (|WoW| &ge; ${it.alert_threshold_pct}%)<ul style=\"margin:6px 0 0 18px;padding:0;\">${flagItems}</ul></div>`\n  : '';\nconst logoBlock = logo\n  ? `<img src=\"${esc(logo)}\" alt=\"${esc(brand)}\" style=\"max-height:40px;display:block;margin-bottom:10px;\">`\n  : '';\nconst bodyHtml = `<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#222;\">\n  <div style=\"background:${color};padding:18px 24px;border-radius:8px 8px 0 0;\">\n    ${logoBlock}<div style=\"color:#ffffff;font-size:20px;font-weight:bold;\">${esc(brand)}</div>\n    <div style=\"color:rgba(255,255,255,0.85);font-size:12px;\">Weekly report — week ending ${esc(it.report_date)}</div>\n  </div>\n  <div style=\"border:1px solid #e3e3e3;border-top:none;padding:20px 24px;border-radius:0 0 8px 8px;\">\n    <table style=\"border-collapse:collapse;width:100%;font-size:13px;\">\n      <tr><th style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:left;\">source</th><th style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:left;\">metric</th><th style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">this week</th><th style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">last week</th><th style=\"padding:6px 10px;border:1px solid #e3e3e3;text-align:right;\">WoW</th></tr>\n      ${metricRows.join('')}\n    </table>\n    ${flagSection}\n    <p style=\"font-size:14px;line-height:1.5;\">${esc(it.narrative)}</p>\n    <p style=\"font-size:11px;color:#888;\">— weekly client report</p>\n  </div>\n</div>`;\nconst flagMd = flagItems ? `\\n\\nFlagged anomalies (|WoW| >= ${it.alert_threshold_pct}%):\\n` + (it.flags || []).map((f) => `- ${f.source} ${f.metric}: ${f.delta_pct}% WoW`).join('\\n') : '';\nconst body = `# ${it.client_name} — week ending ${it.report_date}\\n\\n${it.metric_table}${flagMd}\\n\\n${it.narrative}\\n\\n— weekly client report`;\nreturn { json: { ...it, status: 'report-built', subject, body_markdown: body, body_html: bodyHtml } };\n"
+      },
+      "notes": "Sink contract: {subject, body_markdown, body_html, recipients} — see spec.md."
+    },
+    {
+      "id": "fan-out-sinks",
+      "name": "Fan out sinks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3580,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// One item per enabled sink — sink flags are cells, so delivery channels\n// toggle without touching the workflow. All-items mode: one report fans\n// out to N sink sends.\nconst out = [];\nfor (const item of $input.all()) {\n  const it = item.json;\n  const before = out.length;\n  if (it.sinks && it.sinks.gmail) out.push({ json: { ...it, sink: 'gmail', to: it.recipients_email } });\n  if (it.sinks && it.sinks.slack) out.push({ json: { ...it, sink: 'slack', to: it.slack_channel } });\n  if (out.length === before) out.push({ json: { ...it, status: 'alerted', kind: 'missing-data', alert: `${it.client_id}: report built but no sink enabled` } });\n}\nreturn out;\n"
+      }
+    },
+    {
+      "id": "sink-route",
+      "name": "Sink route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        3800,
+        -140
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sink-route-r0",
+                    "leftValue": "={{ $json.sink }}",
+                    "rightValue": "gmail",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "gmail"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sink-route-r1",
+                    "leftValue": "={{ $json.sink }}",
+                    "rightValue": "slack",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "slack"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "dock — new sink"
+        }
+      },
+      "notes": "One output per sink adapter; fallback is the sink extension dock."
+    },
+    {
+      "id": "gmail-live",
+      "name": "Gmail live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4020,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "gmail-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gmail-mode",
+      "name": "Delivery mode: draft?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "gmail-mode-c",
+              "leftValue": "={{ $json.delivery_mode === 'draft' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "delivery_mode is a config-sheet cell: 'draft' files the report for owner review instead of sending."
+    },
+    {
+      "id": "demo-gmail-mode",
+      "name": "Demo delivery: draft?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "demo-gmail-mode-c",
+              "leftValue": "={{ $json.delivery_mode === 'draft' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Demo mirror of the same delivery_mode cell."
+    },
+    {
+      "id": "send-report-email",
+      "name": "Send report email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4380,
+        -280
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.body_html }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "Client-facing send — branded HTML body. delivery_mode=send (default).",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "create-report-draft",
+      "name": "Create report draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4380,
+        -380
+      ],
+      "parameters": {
+        "resource": "draft",
+        "operation": "create",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.body_html }}",
+        "options": {
+          "sendTo": "={{ $json.to }}"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "delivery_mode=draft — the report lands in Gmail drafts for owner review; nothing is sent.",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "mark-email-sent",
+      "name": "Mark email sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4600,
+        -280
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Gmail send replaces the item with its response — recover the report\n// fields from the paired 'Fan out sinks' item.\nconst req = $('Fan out sinks').item.json;\nreturn { json: { status: 'sink-ok', sink: 'gmail', delivery_mode: 'send', dedupe_key: req.dedupe_key, client_id: req.client_id, to: req.to, flag_count: req.flag_count || 0, flags: req.flags || [], live: true } };\n"
+      }
+    },
+    {
+      "id": "mark-draft-created",
+      "name": "Mark draft created",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4600,
+        -380
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Same recovery as 'Mark email sent' — a created draft still counts as\n// delivered for the ledger (re-runs must not re-draft), the sink-ok item\n// just records delivery_mode='draft'.\nconst req = $('Fan out sinks').item.json;\nreturn { json: { status: 'sink-ok', sink: 'gmail', delivery_mode: 'draft', dedupe_key: req.dedupe_key, client_id: req.client_id, to: req.to, flag_count: req.flag_count || 0, flags: req.flags || [], live: true } };\n"
+      }
+    },
+    {
+      "id": "demo-email-sink",
+      "name": "Demo email sink",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4380,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item) => ({ json: {\n  status: 'sink-ok', sink: 'gmail', delivery_mode: 'send',\n  dedupe_key: item.json.dedupe_key, client_id: item.json.client_id,\n  to: item.json.to, flag_count: item.json.flag_count || 0,\n  flags: item.json.flags || [],\n  note: 'demo — email not sent', live: false,\n} }));\n"
+      },
+      "notes": "Demo mirror — records what the Gmail send would have done."
+    },
+    {
+      "id": "demo-draft-sink",
+      "name": "Demo draft sink",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4380,
+        -180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item) => ({ json: {\n  status: 'sink-ok', sink: 'gmail', delivery_mode: 'draft',\n  dedupe_key: item.json.dedupe_key, client_id: item.json.client_id,\n  to: item.json.to, flag_count: item.json.flag_count || 0,\n  flags: item.json.flags || [],\n  note: 'demo — draft created, not sent', live: false,\n} }));\n"
+      },
+      "notes": "Demo mirror — records the draft-for-review path."
+    },
+    {
+      "id": "slack-live",
+      "name": "Slack live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4020,
+        60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "slack-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "post-slack",
+      "name": "Post report to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4240,
+        -20
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.to, text: $json.subject + \"\\n\\n\" + $json.body_markdown }) }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueErrorOutput",
+      "notes": "chat.postMessage to the per-client channel from the config row. Attach a Header Auth credential: name 'Authorization', value 'Bearer <bot token>' (chat:write scope)."
+    },
+    {
+      "id": "slack-ok",
+      "name": "Slack delivered?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4500,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "slack-ok-c",
+              "leftValue": "={{ $json.ok === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "chat.postMessage returns ok:false at HTTP 200 — only ok===true counts as delivered; ok:false routes to the sink-alert branch with the API error string."
+    },
+    {
+      "id": "mark-slack-sent",
+      "name": "Mark slack sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4680,
+        -20
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const req = $('Fan out sinks').item.json;\nreturn { json: { status: 'sink-ok', sink: 'slack', dedupe_key: req.dedupe_key, client_id: req.client_id, to: req.to, flag_count: req.flag_count || 0, flags: req.flags || [], live: true } };\n"
+      }
+    },
+    {
+      "id": "demo-slack-sink",
+      "name": "Demo Slack sink",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4240,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item) => ({ json: {\n  status: 'sink-ok', sink: 'slack', dedupe_key: item.json.dedupe_key,\n  client_id: item.json.client_id, to: item.json.to,\n  flag_count: item.json.flag_count || 0, flags: item.json.flags || [],\n  note: 'demo — slack post not sent', live: false,\n} }));\n"
+      },
+      "notes": "Demo mirror — records what the Slack post would have done."
+    },
+    {
+      "id": "sink-dock",
+      "name": "Sink extension dock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4020,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Sink-side attach point — add a Switch rule for the new sink's name and\n// a live/demo pair that consumes {subject, body_markdown, body_html, to}\n// and emits {status:'sink-ok', sink, dedupe_key, client_id, delivery_mode,\n// flag_count, flags} into Merge sends.\nreturn $input.all().map((item) => ({\n  json: { ...item.json, status: 'skipped', reason: `unhandled sink '${item.json.sink}' — dock a new sink adapter on this output` },\n}));\n"
+      },
+      "notes": "Attach point for new sink adapters."
+    },
+    {
+      "id": "compose-sink-alert",
+      "name": "Compose sink alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4460,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Delivery/record failures land here from the error outputs — one failed\n// sink alerts while the rest of the report (and other clients) finish.\nconst e = $json.error;\nconst msg = typeof e === 'string' ? e : ((e && e.message) || 'delivery failed');\nlet req = {};\ntry { req = $('Fan out sinks').item.json; } catch (err) { req = {}; }\nreturn { json: {\n  status: 'alerted', kind: 'failure',\n  alert: `report delivery failed for ${req.client_id || $json.client_id || 'unknown'} via ${req.sink || 'sink'}: ${msg}`,\n  client_id: req.client_id || $json.client_id || 'unknown',\n  live: req.live === true || $json.live === true,\n} };\n"
+      },
+      "notes": "Turns a failed send or ledger write into a failure alert for the digest."
+    },
+    {
+      "id": "merge-sends",
+      "name": "Merge sends",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        4780,
+        -140
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 7
+      },
+      "notes": "append — one wave of sink results per run."
+    },
+    {
+      "id": "collapse-sends",
+      "name": "Collapse sends",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4920,
+        -140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Sink results -> one 'reported' item per dedupe_key. Anything that is\n// not a send result (dock skips) passes through.\nconst byReport = {};\nconst passthrough = [];\nfor (const i of $input.all()) {\n  const j = i.json;\n  if (j.status !== 'sink-ok') { passthrough.push({ json: j }); continue; }\n  if (!byReport[j.dedupe_key]) {\n    byReport[j.dedupe_key] = {\n      status: 'reported', dedupe_key: j.dedupe_key, client_id: j.client_id,\n      sinks_sent: [], live: j.live === true,\n      flag_count: j.flag_count || 0, flags: j.flags || [],\n      delivery_mode: j.delivery_mode || 'send',\n    };\n  }\n  const sinkLabel = j.delivery_mode === 'draft' && j.sink === 'gmail' ? 'gmail(draft)' : j.sink;\n  byReport[j.dedupe_key].sinks_sent.push(sinkLabel);\n}\nreturn [...Object.values(byReport).map((r) => ({ json: r })), ...passthrough];\n"
+      },
+      "notes": "One 'reported' item per delivered report — the ledger write key."
+    },
+    {
+      "id": "record-live",
+      "name": "Record report?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5140,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "record-live-c",
+              "leftValue": "={{ $json.status === 'reported' && $json.live === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Live reports upsert the ledger; demo and skips pass to the digest merge."
+    },
+    {
+      "id": "record-report",
+      "name": "Record report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        5360,
+        -220
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reports",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dedupe_key": "={{ $json.dedupe_key }}",
+            "client_id": "={{ $json.client_id }}",
+            "report_week": "={{ $json.dedupe_key.split('__')[1] }}",
+            "sinks_sent": "={{ $json.sinks_sent.join(', ') }}",
+            "sent_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "dedupe_key"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "appendOrUpdate on dedupe_key — a retried write updates the same row, never a duplicate.",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "demo-record",
+      "name": "Demo: record or skip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5360,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Demo ledger write mirror — reports get a demo 'reported' marker,\n// non-report items pass through untouched.\nreturn $input.all().map((item) => ({\n  json: item.json.status === 'reported'\n    ? { ...item.json, demo_note: `would upsert reports row ${item.json.dedupe_key}` }\n    : item.json,\n}));\n"
+      }
+    },
+    {
+      "id": "merge-run",
+      "name": "Merge run",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        5600,
+        200
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 7
+      },
+      "notes": "append — single wave in front of the digest (the A6.1 rule: merge first, digest once)."
+    },
+    {
+      "id": "run-digest",
+      "name": "Run digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5820,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Exactly one item per run — runOnceForAllItems over the merged wave.\n// anomaly_flags counts the deterministic per-metric flags carried on each\n// reported item (|delta_pct| >= the client's alert_threshold_pct cell).\nconst items = $input.all();\nconst alerts = items.filter((i) => i.json.status === 'alerted').map((i) => i.json.alert);\nconst reportedItems = items.filter((i) => i.json.status === 'reported');\nconst reported = reportedItems.length;\nconst skipped = items.filter((i) => i.json.status === 'skipped').length;\nconst flaggedMetrics = reportedItems.flatMap((i) =>\n  (i.json.flags || []).map((f) => `${i.json.client_id}: ${f.source}/${f.metric} ${f.delta_pct}%`));\nreturn [{ json: {\n  status: 'digest',\n  summary: `Run complete: ${reported} report(s) delivered, ${skipped} skipped, ${alerts.length} alert(s), ${flaggedMetrics.length} anomaly flag(s)`,\n  reports_delivered: reported,\n  skipped,\n  anomaly_flags: flaggedMetrics.length,\n  flagged_metrics: flaggedMetrics,\n  needs_attention: alerts,\n  live: items.some((i) => i.json.live === true),\n} }];\n"
+      },
+      "notes": "One digest item — status 'digest', needs_attention lists every alert; 'live' is true only when the wave came from the sheet (demo runs carry live:false)."
+    },
+    {
+      "id": "digest-live",
+      "name": "Digest is live?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6040,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "digest-live-c",
+              "leftValue": "={{ $json.live }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Same live-gate pattern as the sink branches — demo digests (live:false) end here and never reach Gmail."
+    },
+    {
+      "id": "format-digest-email",
+      "name": "Format digest email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6260,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// {to} in from 'Operator email', digest fields out to the Gmail node.\n// The lane guard: 'Operator email' also fires inside error-triggered\n// executions (its other input), where 'Run digest' has no data — the\n// lookup then throws and this returns zero items, so the digest email\n// never fires on a failure alert.\nlet d;\ntry { d = $('Run digest').first().json; } catch (e) { return []; }\nconst to = $input.first().json.to || 'owner@example.com';\nconst alerts = (d.needs_attention || []).map((a) => `- ${a}`).join('\\n');\nconst flags = (d.flagged_metrics || []).map((f) => `- ${f}`).join('\\n');\nreturn [{ json: {\n  to,\n  subject: `Weekly client reports: ${d.reports_delivered} delivered, ${d.skipped} skipped, ${(d.needs_attention || []).length} alert(s)`,\n  body: `${d.summary}${alerts ? `\\n\\nNeeds attention:\\n${alerts}` : ''}${flags ? `\\n\\nAnomaly flags:\\n${flags}` : ''}`,\n} }];\n"
+      },
+      "notes": "Builds the digest mail from the Run digest item; silent when no digest exists (error-triggered executions)."
+    },
+    {
+      "id": "email-operator-digest",
+      "name": "Email operator: run digest",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        6480,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "One run summary per live run. No error output on purpose — a failed digest mail fails the execution and the error lane reports it (routing it back to Merge run would loop)."
+    },
+    {
+      "id": "setup-trigger",
+      "name": "SETUP — press play on this node once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        1500
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "create-workbook",
+      "name": "Create report workbook",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -940,
+        1500
+      ],
+      "parameters": {
+        "resource": "spreadsheet",
+        "operation": "create",
+        "title": "Weekly Client Reports",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "config"
+            },
+            {
+              "title": "reports"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "One call creates the workbook with both tabs."
+    },
+    {
+      "id": "seed-tabs",
+      "name": "Seed tabs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        1500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// One seed item per tab — 'tab' routes through the Switch and is stripped\n// before the append (an empty sheet autoMaps headers from item keys, so a\n// stray 'tab' key would become a real column). The reports seed must carry\n// dedupe_key — it is the appendOrUpdate matching column downstream.\nreturn [\n  { json: { tab: 'config', client_id: 'acme', client_name: 'Acme Retail (example)', enabled: 'yes', src_meta_ads: 'yes', src_google_ads: 'yes', src_ga4: 'yes', sink_gmail: 'yes', sink_slack: 'no', recipients_email: 'client@example.com', slack_channel: '', meta_ad_account_id: '', google_ads_customer_id: '', ga4_property_id: '', delivery_mode: 'send', brand_name: '', brand_color: '', brand_logo_url: '', alert_threshold_pct: '' } },\n  { json: { tab: 'reports', dedupe_key: 'acme__2026-W41', client_id: 'acme', report_week: '2026-W41', sinks_sent: 'gmail', sent_at: '2026-10-06T09:00:00.000Z' } },\n];\n"
+      },
+      "notes": "Seed keys are the schema — they become the tab headers."
+    },
+    {
+      "id": "route-by-tab",
+      "name": "Route by tab",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -500,
+        1500
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "route-by-tab-r0",
+                    "leftValue": "={{ $json.tab }}",
+                    "rightValue": "config",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "config"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "route-by-tab-r1",
+                    "leftValue": "={{ $json.tab }}",
+                    "rightValue": "reports",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reports"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "shape-config",
+      "name": "Shape config row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        1440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Strip the 'tab' routing key — only real columns survive, so the\n// empty-sheet autoMap writes a clean header row.\nreturn $input.all().map((item) => {\n  const { tab, ...cols } = item.json;\n  return { json: cols };\n});\n"
+      }
+    },
+    {
+      "id": "shape-reports",
+      "name": "Shape reports row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        1580
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Strip the 'tab' routing key — only real columns survive, so the\n// empty-sheet autoMap writes a clean header row.\nreturn $input.all().map((item) => {\n  const { tab, ...cols } = item.json;\n  return { json: cols };\n});\n"
+      }
+    },
+    {
+      "id": "write-config",
+      "name": "Write config tab",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        1440
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create report workbook').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "config",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_id": "={{ $json.client_id }}",
+            "client_name": "={{ $json.client_name }}",
+            "enabled": "={{ $json.enabled }}",
+            "src_meta_ads": "={{ $json.src_meta_ads }}",
+            "src_google_ads": "={{ $json.src_google_ads }}",
+            "src_ga4": "={{ $json.src_ga4 }}",
+            "sink_gmail": "={{ $json.sink_gmail }}",
+            "sink_slack": "={{ $json.sink_slack }}",
+            "recipients_email": "={{ $json.recipients_email }}",
+            "slack_channel": "={{ $json.slack_channel }}",
+            "meta_ad_account_id": "={{ $json.meta_ad_account_id }}",
+            "google_ads_customer_id": "={{ $json.google_ads_customer_id }}",
+            "ga4_property_id": "={{ $json.ga4_property_id }}",
+            "delivery_mode": "={{ $json.delivery_mode }}",
+            "brand_name": "={{ $json.brand_name }}",
+            "brand_color": "={{ $json.brand_color }}",
+            "brand_logo_url": "={{ $json.brand_logo_url }}",
+            "alert_threshold_pct": "={{ $json.alert_threshold_pct }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "write-reports",
+      "name": "Write reports tab",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        1580
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create report workbook').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reports",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dedupe_key": "={{ $json.dedupe_key }}",
+            "client_id": "={{ $json.client_id }}",
+            "report_week": "={{ $json.report_week }}",
+            "sinks_sent": "={{ $json.sinks_sent }}",
+            "sent_at": "={{ $json.sent_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "merge-setup",
+      "name": "Merge setup writes",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        160,
+        1500
+      ],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "print-sheet-id",
+      "name": "Print sheet id + next step",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        1500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const created = $('Create report workbook').first().json;\nconst id = created.spreadsheetId || created.id || '';\nreturn [{ json: {\n  spreadsheet_id: id,\n  next_step: 'Paste spreadsheet_id into the Workflow Config node, set your email in the Operator email node, fill the config tab with your clients, then delete this setup lane.',\n} }];\n"
+      },
+      "notes": "The id to paste into Workflow Config."
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Demo config (fixture)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo config (fixture)": {
+      "main": [
+        [
+          {
+            "node": "Validate clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On workflow error": {
+      "main": [
+        [
+          {
+            "node": "Operator email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Operator email": {
+      "main": [
+        [
+          {
+            "node": "Format error alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format digest email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error alert": {
+      "main": [
+        [
+          {
+            "node": "Email owner: workflow error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly tick — Monday 09:00": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Read config tab",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read reports ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read reports ledger": {
+      "main": [
+        [
+          {
+            "node": "Collect sent keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read config tab": {
+      "main": [
+        [
+          {
+            "node": "Validate clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate clients": {
+      "main": [
+        [
+          {
+            "node": "Expand enabled sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand enabled sources": {
+      "main": [
+        [
+          {
+            "node": "Has source?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has source?": {
+      "main": [
+        [
+          {
+            "node": "Source route",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Source route": {
+      "main": [
+        [
+          {
+            "node": "Meta Ads live?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Ads live?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GA4 live?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extension dock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Ads live?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Meta Ads insights",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo Meta Ads fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Meta Ads insights": {
+      "main": [
+        [
+          {
+            "node": "Normalize Meta Ads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose source alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Meta Ads": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Meta Ads fetch": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Ads live?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Google Ads metrics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo Google Ads fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Google Ads metrics": {
+      "main": [
+        [
+          {
+            "node": "Normalize Google Ads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose source alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Google Ads": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Demo Google Ads fetch": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "GA4 live?": {
+      "main": [
+        [
+          {
+            "node": "Fetch GA4 report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo GA4 fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch GA4 report": {
+      "main": [
+        [
+          {
+            "node": "Normalize GA4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose source alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize GA4": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Demo GA4 fetch": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Extension dock": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Compose source alert": {
+      "main": [
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge sources": {
+      "main": [
+        [
+          {
+            "node": "Compute WoW deltas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute WoW deltas": {
+      "main": [
+        [
+          {
+            "node": "Group report table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group report table": {
+      "main": [
+        [
+          {
+            "node": "Ready to report?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to report?": {
+      "main": [
+        [
+          {
+            "node": "Dedupe check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Dedupe check": {
+      "main": [
+        [
+          {
+            "node": "Already sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already sent?": {
+      "main": [
+        [
+          {
+            "node": "Compose duplicate alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build report prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose duplicate alert": {
+      "main": [
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Build report prompt": {
+      "main": [
+        [
+          {
+            "node": "Prose live?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prose live?": {
+      "main": [
+        [
+          {
+            "node": "Write report narrative (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo narrative",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write report narrative (AI)": {
+      "main": [
+        [
+          {
+            "node": "Parse narrative",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse narrative": {
+      "main": [
+        [
+          {
+            "node": "Render report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo narrative": {
+      "main": [
+        [
+          {
+            "node": "Render report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render report": {
+      "main": [
+        [
+          {
+            "node": "Fan out sinks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fan out sinks": {
+      "main": [
+        [
+          {
+            "node": "Sink route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sink route": {
+      "main": [
+        [
+          {
+            "node": "Gmail live?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack live?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sink extension dock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail live?": {
+      "main": [
+        [
+          {
+            "node": "Delivery mode: draft?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo delivery: draft?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery mode: draft?": {
+      "main": [
+        [
+          {
+            "node": "Create report draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send report email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo delivery: draft?": {
+      "main": [
+        [
+          {
+            "node": "Demo draft sink",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo email sink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send report email": {
+      "main": [
+        [
+          {
+            "node": "Mark email sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose sink alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create report draft": {
+      "main": [
+        [
+          {
+            "node": "Mark draft created",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose sink alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark draft created": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark email sent": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Demo draft sink": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Demo email sink": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Slack live?": {
+      "main": [
+        [
+          {
+            "node": "Post report to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo Slack sink",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post report to Slack": {
+      "main": [
+        [
+          {
+            "node": "Slack delivered?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose sink alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack delivered?": {
+      "main": [
+        [
+          {
+            "node": "Mark slack sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compose sink alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark slack sent": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Demo Slack sink": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Sink extension dock": {
+      "main": [
+        [
+          {
+            "node": "Merge sends",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Compose sink alert": {
+      "main": [
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge sends": {
+      "main": [
+        [
+          {
+            "node": "Collapse sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collapse sends": {
+      "main": [
+        [
+          {
+            "node": "Record report?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record report?": {
+      "main": [
+        [
+          {
+            "node": "Record report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Demo: record or skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record report": {
+      "main": [
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 5
+          }
+        ],
+        [
+          {
+            "node": "Compose sink alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo: record or skip": {
+      "main": [
+        [
+          {
+            "node": "Merge run",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Merge run": {
+      "main": [
+        [
+          {
+            "node": "Run digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run digest": {
+      "main": [
+        [
+          {
+            "node": "Digest is live?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Digest is live?": {
+      "main": [
+        [
+          {
+            "node": "Operator email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format digest email": {
+      "main": [
+        [
+          {
+            "node": "Email operator: run digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SETUP — press play on this node once": {
+      "main": [
+        [
+          {
+            "node": "Create report workbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create report workbook": {
+      "main": [
+        [
+          {
+            "node": "Seed tabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seed tabs": {
+      "main": [
+        [
+          {
+            "node": "Route by tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by tab": {
+      "main": [
+        [
+          {
+            "node": "Shape config row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Shape reports row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape config row": {
+      "main": [
+        [
+          {
+            "node": "Write config tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write config tab": {
+      "main": [
+        [
+          {
+            "node": "Merge setup writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape reports row": {
+      "main": [
+        [
+          {
+            "node": "Write reports tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write reports tab": {
+      "main": [
+        [
+          {
+            "node": "Merge setup writes",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge setup writes": {
+      "main": [
+        [
+          {
+            "node": "Print sheet id + next step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "timezone": "GMT"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

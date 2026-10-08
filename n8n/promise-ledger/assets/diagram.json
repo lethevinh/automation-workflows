@@ -1,0 +1,282 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Promise Ledger — Track Promises Made to You, Chase Before They Go Cold",
+    "subtitle": "n8n workflow · inbound promises · approval-gated chasing",
+    "output": ".archify/workflow-promise-ledger-20261008-1010/promise-ledger.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "inbox",
+      "label": "Inbox intake (hourly)"
+    },
+    {
+      "id": "ledger",
+      "label": "Commitments ledger — Google Sheet"
+    },
+    {
+      "id": "sweep",
+      "label": "Daily sweep (08:00)"
+    },
+    {
+      "id": "gate",
+      "label": "Owner approval & digest",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "sched",
+    "read",
+    "classify",
+    "routesw",
+    "drafts",
+    "queue",
+    "digest"
+  ],
+  "nodes": [
+    {
+      "id": "hourly",
+      "lane": "inbox",
+      "col": 0,
+      "type": "external",
+      "label": "Hourly inbox scan",
+      "sublabel": "Gmail trigger",
+      "width": 140
+    },
+    {
+      "id": "extract",
+      "lane": "inbox",
+      "col": 1,
+      "type": "backend",
+      "label": "Extract promises (AI)",
+      "sublabel": "who · what · due",
+      "width": 160
+    },
+    {
+      "id": "parse",
+      "lane": "inbox",
+      "col": 2,
+      "type": "backend",
+      "label": "Parse + classify",
+      "sublabel": "commitment / fulfillment / skip",
+      "width": 165
+    },
+    {
+      "id": "routein",
+      "lane": "inbox",
+      "col": 3,
+      "type": "backend",
+      "label": "Route intake",
+      "sublabel": "terminal for every email",
+      "width": 170
+    },
+    {
+      "id": "labeldone",
+      "lane": "inbox",
+      "col": 5,
+      "type": "external",
+      "label": "Label processed",
+      "sublabel": "inbox stays clean",
+      "width": 115
+    },
+    {
+      "id": "write",
+      "lane": "ledger",
+      "col": 4,
+      "type": "database",
+      "label": "Commitments ledger",
+      "sublabel": "open → done lifecycle",
+      "width": 175
+    },
+    {
+      "id": "sched",
+      "lane": "sweep",
+      "col": 0,
+      "type": "external",
+      "label": "08:00 sweep",
+      "sublabel": "daily schedule",
+      "width": 130
+    },
+    {
+      "id": "read",
+      "lane": "sweep",
+      "col": 1,
+      "type": "database",
+      "label": "Read open rows",
+      "sublabel": "ledger state",
+      "width": 140
+    },
+    {
+      "id": "classify",
+      "lane": "sweep",
+      "col": 2,
+      "type": "backend",
+      "label": "Classify aging",
+      "sublabel": "due / overdue / 3d+",
+      "width": 150
+    },
+    {
+      "id": "routesw",
+      "lane": "sweep",
+      "col": 3,
+      "type": "backend",
+      "label": "Route by status",
+      "sublabel": "per promise",
+      "width": 115
+    },
+    {
+      "id": "drafts",
+      "lane": "sweep",
+      "col": 4,
+      "type": "backend",
+      "label": "Draft chase emails",
+      "sublabel": "gentle → firmer chase",
+      "width": 150
+    },
+    {
+      "id": "esc",
+      "lane": "gate",
+      "col": 3,
+      "type": "security",
+      "label": "Escalate",
+      "sublabel": "3+ days overdue",
+      "tag": "straight to owner",
+      "width": 140
+    },
+    {
+      "id": "queue",
+      "lane": "gate",
+      "col": 4,
+      "type": "security",
+      "label": "Chase-Queue tab",
+      "sublabel": "nothing auto-sends",
+      "tag": "approval gate",
+      "width": 170
+    },
+    {
+      "id": "digest",
+      "lane": "gate",
+      "col": 5,
+      "type": "external",
+      "label": "Morning digest",
+      "sublabel": "per-person aging",
+      "width": 150
+    },
+    {
+      "id": "setup",
+      "lane": "ledger",
+      "col": 0,
+      "type": "backend",
+      "label": "SETUP lane",
+      "sublabel": "builds the 2-tab sheet",
+      "tag": "run once",
+      "width": 139
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "hourly",
+      "to": "extract",
+      "variant": "default"
+    },
+    {
+      "id": "e2",
+      "from": "extract",
+      "to": "parse",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "parse",
+      "to": "routein",
+      "variant": "default"
+    },
+    {
+      "id": "e4",
+      "from": "routein",
+      "to": "write",
+      "variant": "emphasis",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "from": "routein",
+      "to": "labeldone",
+      "variant": "dashed"
+    },
+    {
+      "id": "e6",
+      "from": "sched",
+      "to": "read",
+      "variant": "default"
+    },
+    {
+      "id": "e7",
+      "from": "read",
+      "to": "classify",
+      "variant": "default"
+    },
+    {
+      "id": "e8",
+      "from": "classify",
+      "to": "routesw",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e9",
+      "from": "routesw",
+      "to": "drafts",
+      "variant": "default"
+    },
+    {
+      "id": "e10",
+      "from": "routesw",
+      "to": "esc",
+      "label": "3+ days",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e11",
+      "from": "drafts",
+      "to": "queue",
+      "variant": "security"
+    },
+    {
+      "id": "e12",
+      "from": "queue",
+      "to": "digest",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e13",
+      "from": "setup",
+      "to": "write",
+      "label": "seeds",
+      "variant": "dashed",
+      "role": "branch",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Inbound, not outbound",
+      "items": [
+        "Most trackers scan sent mail for promises you made — this one tracks promises made to you",
+        "Fulfillment replies close the ledger row automatically"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Never embarrasses you",
+      "items": [
+        "Every chase lands in Chase-Queue — nothing auto-sends",
+        "Escalation fires once per promise, tracked by ledger status"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "Affiliate Intake \u2014 Screen Applications, Draft Outreach",
+  "subtitle": "n8n workflow \u00b7 zero-credential demo runs end-to-end on import",
+  "output": ".archify/workflow-affiliate-intake-20261008-1000/affiliate-intake.html",
+  "quality_profile": "showcase"
+ },
+ "lanes": [
+  {
+   "id": "main",
+   "label": "Main flow"
+  },
+  {
+   "id": "alt",
+   "label": "Alternate paths",
+   "variant": "exception"
+  }
+ ],
+ "phases": [
+  {
+   "id": "load",
+   "label": "Load batch",
+   "fromCol": 0,
+   "toCol": 1
+  },
+  {
+   "id": "decide",
+   "label": "Decide + route",
+   "fromCol": 2,
+   "toCol": 3,
+   "variant": "emphasis"
+  },
+  {
+   "id": "close",
+   "label": "Digest",
+   "fromCol": 4,
+   "toCol": 4,
+   "variant": "dashed"
+  }
+ ],
+ "mainPath": [
+  "trigger",
+  "score",
+  "gate",
+  "outreach",
+  "merge",
+  "digest"
+ ],
+ "nodes": [
+  {
+   "id": "trigger",
+   "lane": "main",
+   "col": 0,
+   "type": "external",
+   "label": "Demo batch",
+   "sublabel": "6 sample applications",
+   "tag": "zero credentials",
+   "width": 150
+  },
+  {
+   "id": "formswap",
+   "lane": "alt",
+   "col": 0,
+   "type": "cloud",
+   "label": "Production swap",
+   "sublabel": "form / webhook trigger",
+   "width": 140
+  },
+  {
+   "id": "score",
+   "lane": "main",
+   "col": 1,
+   "type": "backend",
+   "label": "Validate + score",
+   "sublabel": "email dedupe \u00b7 sanity \u00b7 fit",
+   "tag": "editable RULES block",
+   "width": 150
+  },
+  {
+   "id": "gate",
+   "lane": "main",
+   "col": 2,
+   "type": "security",
+   "label": "Qualified?",
+   "sublabel": "fit \u2265 threshold",
+   "width": 132
+  },
+  {
+   "id": "outreach",
+   "lane": "main",
+   "col": 3,
+   "type": "messagebus",
+   "label": "Draft outreach",
+   "sublabel": "personalized per applicant",
+   "width": 150
+  },
+  {
+   "id": "alert",
+   "lane": "alt",
+   "col": 3,
+   "type": "security",
+   "label": "Owner alert",
+   "sublabel": "reason-coded rejection",
+   "width": 150
+  },
+  {
+   "id": "merge",
+   "lane": "main",
+   "col": 4,
+   "type": "backend",
+   "label": "Merge branches",
+   "sublabel": "fires exactly once",
+   "width": 150
+  },
+  {
+   "id": "digest",
+   "lane": "main",
+   "col": 4,
+   "type": "external",
+   "label": "Owner digest",
+   "sublabel": "N qualified \u00b7 M alerts",
+   "width": 150,
+   "yOffset": 96
+  }
+ ],
+ "edges": [
+  {
+   "id": "e1",
+   "from": "trigger",
+   "to": "score",
+   "variant": "default"
+  },
+  {
+   "id": "e2",
+   "from": "formswap",
+   "to": "score",
+   "label": "same item shape",
+   "variant": "dashed",
+   "role": "branch"
+  },
+  {
+   "id": "e3",
+   "from": "score",
+   "to": "gate",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e4",
+   "from": "gate",
+   "to": "outreach",
+   "label": "qualified",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e5",
+   "from": "gate",
+   "to": "alert",
+   "label": "rejected",
+   "variant": "security",
+   "role": "error"
+  },
+  {
+   "id": "e6",
+   "from": "outreach",
+   "to": "merge",
+   "variant": "default"
+  },
+  {
+   "id": "e7",
+   "from": "alert",
+   "to": "merge",
+   "variant": "dashed"
+  },
+  {
+   "id": "e8",
+   "from": "merge",
+   "to": "digest",
+   "variant": "emphasis"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Why one digest",
+   "items": [
+    "Merge joins both branches so the owner gets exactly one summary per run",
+    "Reason codes on rejections make the screening auditable"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Going live",
+   "items": [
+    "Swap the demo batch for a real form trigger \u2014 same item shape",
+    "Add Gmail/Slack after outreach, alert, and digest nodes"
+   ]
+  }
+ ]
+}

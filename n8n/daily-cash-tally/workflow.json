@@ -1,0 +1,599 @@
+{
+  "name": "Monitor till cash leaks with Google Sheets, Gmail, Telegram and OpenAI",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Cash Leak Watchdog — reconcile the till and catch the pattern, not just the day\n\n**Who it's for:** small-shop owners who close the till every night and want discrepancies caught early — especially the slow leak that only shows up when the same shift keeps coming up short.\n\n**How it works:** a nightly schedule (or the manual demo) loads till entries — date, shift, staff, expected sales, counted cash — plus the prior 30 days of history. Each submission is validated, deduped by date+shift and checked against an editable tolerance band (the larger of a flat amount or a percent of sales). Days nobody submitted are inferred from gaps in the sequence. Then the differentiator: a cash variance is noise once — the same staff/shift over band 3 times in 30 days is a pattern, and it escalates to a separate urgent channel. Malformed rows park in a quarantine queue instead of being dropped. One owner digest closes every run with the cumulative 30-day leak total.\n\n**Setup:** ~2 minutes, zero credentials. Click Test workflow — the bundled data exercises every branch: a clean day, an escalated repeat offender, a duplicate, a malformed row and a 3-day submission gap.\n\n**Requirements:** none for demo. Production enables the greyed-out nodes: a Google Sheet as the till log, Gmail for first-offense alerts, Telegram for escalations and the daily digest.\n\n**Customize:** the RULES block in the Reconcile node — tolerance_abs, tolerance_pct, escalate_after, history_days.",
+        "height": 480,
+        "width": 720
+      },
+      "id": "68a75c90-7720-458d-a076-1cd69041804a",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "658c9a8a-d1e6-4f2f-a82a-f1419c74eedf",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        272,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "c85e3634-c3aa-40df-a833-429f7b825591",
+      "name": "Nightly 21:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Demo intake — one item per till-log row. The demo data is a\n// realistic dirty batch: history rows first (two prior over-band\n// nights for Nga set up the escalation), then today's entries.\n//\n// In production this whole lane is replaced by the two Sheet reads\n// below — enable them and remove this node. The Reconcile node\n// splits today from history by max date, so no extra flag field\n// is needed in either lane.\nreturn [\n  // --- prior-30-day history (production: the 'till log' Sheet) ---\n  { json: { date: '2026-09-25', shift: 'day',   staff: 'Linh', expected_sales: 2100.00, counted_cash: 2098.00 } },\n  { json: { date: '2026-09-26', shift: 'night', staff: 'Nga',  expected_sales: 1400.00, counted_cash: 1280.00 } },\n  { json: { date: '2026-09-27', shift: 'day',   staff: 'Linh', expected_sales: 1900.00, counted_cash: 1901.50 } },\n  { json: { date: '2026-09-27', shift: 'night', staff: 'Nga',  expected_sales: 1350.00, counted_cash: 1200.00 } },\n  // --- today's submissions (max date in the batch = today) ---\n  { json: { date: '2026-10-01', shift: 'day',   staff: 'Linh', expected_sales: 2050.00, counted_cash: 2048.40 } },\n  { json: { date: '2026-10-01', shift: 'night', staff: 'Nga',  expected_sales: 1600.00, counted_cash: 1420.00 } },\n  { json: { date: '2026-10-01', shift: 'night', staff: 'Nga',  expected_sales: 1600.00, counted_cash: 1421.00 } },\n  { json: { date: '2026-10-01', shift: 'day',   staff: 'Bo',   expected_sales:  900.00 } }\n  // no entry at all for 09-28, 09-29, 09-30 -> submission gap\n];"
+      },
+      "id": "46a8cb9b-25bf-4a2e-adf1-a3255dc7e230",
+      "name": "Demo till log (entries + history)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "id": "ff2f2452-19e5-4ab8-a1de-b67c2fb4198e",
+      "name": "Read today's till entries",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        912
+      ],
+      "disabled": true,
+      "notes": "Production intake: the Sheet tab the cashier fills at close. Columns: date, shift, staff, expected_sales, counted_cash."
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "id": "5085e2f6-2848-40de-bdf5-0601e6896815",
+      "name": "Read prior-30d till log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        1104
+      ],
+      "disabled": true,
+      "notes": "The accumulated till log — powers cumulative leak totals and repeat-offender escalation. A filter on date >= today-30d keeps the window bounded."
+    },
+    {
+      "parameters": {},
+      "id": "13a0c14a-89d7-4ad0-b906-95ffc666281c",
+      "name": "Merge intake: entries + history",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        496,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cash Leak Watchdog — reconcile today's till, detect gaps,\n// quarantine bad rows, and escalate repeated shortfalls by the\n// same staff/shift. Today = the max submitted date, so the same\n// code serves the demo lane and the Sheet lane unchanged.\n//\n// RULES — edit to match your shop's policy.\nconst RULES = {\n  tolerance_abs: 5.00,   // currency units always tolerated\n  tolerance_pct: 0.5,    // % of expected sales — band widens on big days\n  currency: '$',\n  escalate_after: 2,     // prior over-band shifts by same staff -> escalation\n  history_days: 30\n};\n\nconst MS_PER_DAY = 86400000;\nconst toDay = d => Date.parse(d + 'T00:00:00Z');\nconst toISO = ms => new Date(ms).toISOString().slice(0, 10);\nconst money = n => `${RULES.currency}${Math.abs(n).toFixed(2)}`;\n\nconst rows = $input.all().map(i => i.json);\nconst isComplete = r =>\n  r.date && typeof r.expected_sales === 'number' && typeof r.counted_cash === 'number';\n\nconst complete = rows.filter(isComplete);\nconst malformed = rows.filter(r => !isComplete(r));\n\n// Split today vs history by max date — no scope flag needed.\nconst today = complete.length\n  ? toISO(Math.max(...complete.map(r => toDay(r.date))))\n  : null;\nconst history = complete.filter(r => r.date !== today);\nconst todays = complete.filter(r => r.date === today);\n\nconst out = [];\nconst alerts = [];\n\n// Prior over-band shifts per staff member — the state that makes a\n// single variance turn into an escalation.\nconst priorOverBand = {};\nlet leak30d = 0;\nfor (const h of history) {\n  const delta = Math.round((h.counted_cash - h.expected_sales) * 100) / 100;\n  const band = Math.max(RULES.tolerance_abs, h.expected_sales * RULES.tolerance_pct / 100);\n  if (Math.abs(delta) > band) {\n    priorOverBand[h.staff] = (priorOverBand[h.staff] || 0) + 1;\n    leak30d += delta;\n  }\n}\n\n// Malformed rows are parked — they reach the owner as data-quality\n// alerts and reprocess automatically once fixed, since production\n// intake re-reads the whole log each sweep.\nfor (const r of malformed) {\n  const missing = !r.date ? 'date'\n    : typeof r.expected_sales !== 'number' ? 'expected_sales' : 'counted_cash';\n  const alert = `Till check ${r.date || '(no date)'} ${r.shift || ''} quarantined: missing required field '${missing}' — row parked for reprocess`;\n  out.push({ json: { status: 'alerted', route: 'quarantine', kind: 'missing-data',\n    ...r, flag: `missing ${missing}`, alert } });\n  alerts.push(alert);\n}\n\n// Submission gap: days between the last history date and today with\n// no entry at all — a day nobody submitted is the worst kind of short.\nif (history.length && today) {\n  const lastHist = Math.max(...history.map(r => toDay(r.date)));\n  const silent = Math.round((toDay(today) - lastHist) / MS_PER_DAY) - 1;\n  if (silent > 0) {\n    const first = toISO(lastHist + MS_PER_DAY);\n    const last = toISO(toDay(today) - MS_PER_DAY);\n    const alert = `No till submission for ${silent} day(s): ${first} to ${last} — check whether the shop was closed or entries were skipped`;\n    out.push({ json: { status: 'alerted', route: 'alert', kind: 'missing-data',\n      date: `${first}..${last}`, flag: 'submission gap', alert } });\n    alerts.push(alert);\n  }\n}\n\n// Today's entries: dedupe by date+shift, then band check, then\n// repeat-offender escalation against the 30-day history.\nconst seen = new Set();\nfor (const r of todays) {\n  const key = `${r.date}|${r.shift}`;\n  const base = { date: r.date, shift: r.shift, staff: r.staff,\n    expected_sales: r.expected_sales, counted_cash: r.counted_cash };\n\n  if (seen.has(key)) {\n    const alert = `Duplicate till entry for ${r.date} ${r.shift} (${r.staff}) — first submission kept, this one ignored`;\n    out.push({ json: { status: 'alerted', route: 'quarantine', kind: 'duplicate',\n      ...base, flag: 'duplicate submission', alert } });\n    alerts.push(alert);\n    continue;\n  }\n  seen.add(key);\n\n  const delta = Math.round((r.counted_cash - r.expected_sales) * 100) / 100;\n  const band = Math.round(Math.max(RULES.tolerance_abs, r.expected_sales * RULES.tolerance_pct / 100) * 100) / 100;\n\n  if (Math.abs(delta) <= band) {\n    out.push({ json: { status: 'logged', route: 'clean', ...base, delta, band,\n      line: `${r.date} ${r.shift} (${r.staff}): delta ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} within ±${band.toFixed(2)}` } });\n    continue;\n  }\n\n  const priors = priorOverBand[r.staff] || 0;\n  leak30d += delta;\n  const over = delta < 0 ? 'short' : 'over';\n  let alert, route;\n  if (priors >= RULES.escalate_after) {\n    route = 'escalation';\n    alert = `ESCALATION: ${r.staff} ${over} ${money(delta)} on ${r.date} ${r.shift} — over-band shift #${priors + 1} in ${RULES.history_days} days. Review the till procedure for this shift`;\n  } else {\n    route = 'alert';\n    alert = `Till check ${r.date} ${r.shift} (${r.staff}): ${over} ${money(delta)} — outside ±${money(band)} band${priors ? ` (prior over-band shifts: ${priors})` : ''}`;\n  }\n  out.push({ json: { status: 'alerted', route, kind: 'failure',\n    ...base, delta, band, prior_offenses: priors, alert } });\n  alerts.push(alert);\n}\n\n// One digest per run — computed here, after every branch verdict, so\n// an empty branch can never starve it. The Switch routes it to the\n// digest channel downstream.\nconst clean = out.filter(i => i.json.status === 'logged');\nconst topOffender = Object.entries(priorOverBand)\n  .sort((a, b) => b[1] - a[1])[0];\nout.push({ json: {\n  status: 'digest',\n  route: 'digest',\n  channel: 'owner-digest',\n  summary: `Run complete: ${clean.length} shift(s) reconciled clean, ${alerts.length} alert(s)`,\n  leak_30d_total: Math.round(leak30d * 100) / 100,\n  repeat_watch: topOffender ? `${topOffender[0]} (${topOffender[1]} prior over-band shifts)` : 'none',\n  needs_attention: alerts\n} });\n\nreturn out;"
+      },
+      "id": "1453e9ab-537a-4330-ae16-0f569a7db88d",
+      "name": "Reconcile, score history, escalate repeats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r-clean",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "clean",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "clean"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r-alert",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "alert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "alert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r-escalation",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "escalation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r-quarantine",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "quarantine",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quarantine"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r-digest",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "digest",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "digest"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "af108702-fa97-48ed-95f8-96701ab7b41f",
+      "name": "Route outcome",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        944,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "id": "38d71942-e98b-477d-af7b-974e8d94ed03",
+      "name": "Append verdict to till log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1168,
+        720
+      ],
+      "disabled": true,
+      "notes": "Clean days write back to the log — the log becomes tomorrow's 30-day history."
+    },
+    {
+      "parameters": {
+        "sendTo": "owner@example.com",
+        "subject": "=Till alert {{ $json.date }} {{ $json.shift }}",
+        "emailType": "text",
+        "message": "={{ $json.alert }}",
+        "options": {}
+      },
+      "id": "f004c3a5-1332-4970-82aa-f1753d7c8ce5",
+      "name": "Email owner alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1392,
+        912
+      ],
+      "webhookId": "699f1b17-8994-4bf4-96f7-70b7318ac953",
+      "disabled": true,
+      "notes": "First offenses and submission gaps — the daily-operational channel."
+    },
+    {
+      "parameters": {
+        "chatId": "your_chat_id",
+        "text": "={{ $json.alert }}",
+        "additionalFields": {}
+      },
+      "id": "2b17bbe0-518c-4811-9ca3-6c29f537f3af",
+      "name": "Escalation ping",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1168,
+        1104
+      ],
+      "webhookId": "21c19649-89f9-43ab-806d-a038daa7fc0c",
+      "disabled": true,
+      "notes": "Repeat offenders get the urgent channel — a pattern is worth paging for, a single variance is not."
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "id": "75748a62-b959-4838-9e3b-7ae8a14d3f6b",
+      "name": "Park row in quarantine",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        1168,
+        1296
+      ],
+      "disabled": true,
+      "notes": "Malformed or duplicate rows park here instead of being dropped. Fix the row in the till log and the next sweep reprocesses it."
+    },
+    {
+      "parameters": {
+        "chatId": "your_chat_id",
+        "text": "={{ $json.summary }}\n30-day leak: {{ $json.leak_30d_total }}\nWatch: {{ $json.repeat_watch }}\n{{ $json.needs_attention.join('\\n') }}",
+        "additionalFields": {}
+      },
+      "id": "e9ab553b-5032-4f4e-b313-64831d830e15",
+      "name": "Send daily digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1392,
+        1488
+      ],
+      "webhookId": "429e9a53-bb2c-4ba1-b9ce-2b0b6fe8ed9b",
+      "disabled": true,
+      "notes": "Exactly one owner digest per run — totals, cumulative leak, and every alert listed."
+    },
+    {
+      "parameters": {
+        "content": "### Two intake lanes\n\n**Demo:** the Code node emits a till log (history + today) with the dirty rows a real shop produces.\n\n**Production:** enable the two greyed Google Sheets reads — today's entries plus the prior-30-day log — and delete the demo node. Greyed nodes pass data through untouched, so the demo runs end-to-end even with them on the canvas.",
+        "height": 200,
+        "width": 340,
+        "color": 7
+      },
+      "id": "29c4cba2-8816-46db-856f-d3143ba84ce2",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### The mechanism, not just a route\n\nA single variance is noise — the same staff over band 3 times in 30 days is a pattern. History rows are scored before today is judged, so repeat offenses route to escalation while first offenses get a normal alert.\n\nEdit RULES in the Reconcile node: tolerance band, escalate_after, history window.",
+        "height": 200,
+        "width": 340,
+        "color": 7
+      },
+      "id": "e78e7baf-0007-42dd-9bb3-0a18767594bb",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        784,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Nothing silently drops\n\nOver-band → owner alert. Repeat pattern → escalation channel. Missing days → gap alert. Bad rows → quarantine queue that reprocesses when fixed.\n\nThe digest is computed inside Reconcile after every verdict — exactly one per run, and an empty branch can never starve it.",
+        "height": 200,
+        "width": 340,
+        "color": 7
+      },
+      "id": "ad87e5f2-8a6e-49f7-867f-aa9291fbdb8a",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### ⚠ Enable = sends real messages\n\nThe greyed nodes are disabled on purpose — the demo never sends. Enabling Gmail/Telegram/Sheets makes this write rows and message the owner. Attach your own credentials first.",
+        "height": 180,
+        "width": 300,
+        "color": 3
+      },
+      "id": "f74aac67-f73b-482e-a3a3-a05788f1962b",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "c3047730-e334-4d7f-978d-db3e411f88b7",
+      "name": "Optional AI: phrase owner alert",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        912
+      ],
+      "disabled": true,
+      "notes": "Optional. Enable to have an LLM phrase each alert naturally and group the stated reason. When enabled, map Gmail's message to {{ $json.message.content }} instead of {{ $json.alert }}."
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "d1b30cfa-2ee7-41a8-bcd8-dd6bc9a6eb37",
+      "name": "Optional AI: narrate daily digest",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        1488
+      ],
+      "disabled": true,
+      "notes": "Optional. Enable to have an LLM narrate the digest in plain language. When enabled, map Telegram's text to {{ $json.message.content }}."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Demo till log (entries + history)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nightly 21:30": {
+      "main": [
+        [
+          {
+            "node": "Read today's till entries",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read prior-30d till log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo till log (entries + history)": {
+      "main": [
+        [
+          {
+            "node": "Reconcile, score history, escalate repeats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read today's till entries": {
+      "main": [
+        [
+          {
+            "node": "Merge intake: entries + history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read prior-30d till log": {
+      "main": [
+        [
+          {
+            "node": "Merge intake: entries + history",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge intake: entries + history": {
+      "main": [
+        [
+          {
+            "node": "Reconcile, score history, escalate repeats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile, score history, escalate repeats": {
+      "main": [
+        [
+          {
+            "node": "Route outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route outcome": {
+      "main": [
+        [
+          {
+            "node": "Append verdict to till log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Optional AI: phrase owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalation ping",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Park row in quarantine",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Optional AI: narrate daily digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optional AI: phrase owner alert": {
+      "main": [
+        [
+          {
+            "node": "Email owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optional AI: narrate daily digest": {
+      "main": [
+        [
+          {
+            "node": "Send daily digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0d74aa21-b1b0-4344-bc63-90900bc1eae1",
+  "meta": {
+    "instanceId": "REMOVED-INSTANCE-ID"
+  },
+  "nodeGroups": [],
+  "id": "4J2XXYOv1sbZBmpO",
+  "tags": []
+}

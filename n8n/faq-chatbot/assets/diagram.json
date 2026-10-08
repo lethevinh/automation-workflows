@@ -1,0 +1,75 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "FAQ Chatbot — Answers Visitors, Grows Its Own FAQ",
+    "subtitle": "n8n workflow · owner-approved learning loop · zero-credential demo",
+    "output": ".archify/workflow-faq-chatbot-20261008-1010/faq-chatbot.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "chat", "label": "Visitor chat (lane A)" },
+    { "id": "data", "label": "FAQ data — Google Sheet" },
+    { "id": "learn", "label": "Weekly learning loop (lane B)" },
+    { "id": "gate", "label": "Owner approval", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "ask", "label": "Ask", "fromCol": 0, "toCol": 2 },
+    { "id": "answer", "label": "Answer + route", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "improve", "label": "Improve", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["visitor", "trig", "merge", "ai", "route", "reply"],
+  "nodes": [
+    { "id": "visitor", "lane": "chat", "col": 0, "type": "external", "label": "Visitor", "sublabel": "public webchat", "width": 110 },
+    { "id": "trig", "lane": "chat", "col": 1, "type": "frontend", "label": "Chat Trigger", "sublabel": "hosted on n8n", "width": 120 },
+    { "id": "merge", "lane": "chat", "col": 2, "type": "backend", "label": "Merge Q + FAQ", "sublabel": "one item per turn", "width": 140 },
+    { "id": "ai", "lane": "chat", "col": 3, "type": "backend", "label": "AI verdict", "sublabel": "{answered, reply} — FAQ only", "tag": "strict JSON", "width": 155 },
+    { "id": "route", "lane": "chat", "col": 4, "type": "backend", "label": "Route", "sublabel": "4-way split", "width": 120 },
+    { "id": "reply", "lane": "chat", "col": 5, "type": "frontend", "label": "Instant reply", "sublabel": "graceful on AI fail", "width": 125 },
+    { "id": "setup", "lane": "data", "col": 0, "type": "backend", "label": "SETUP lane", "sublabel": "builds 4-tab sheet", "tag": "run once", "width": 120 },
+    { "id": "faq", "lane": "data", "col": 1, "type": "database", "label": "FAQ tab", "sublabel": "approved answers", "width": 120 },
+    { "id": "unans", "lane": "data", "col": 4, "type": "database", "label": "Unanswered log", "sublabel": "repeats raise the row", "width": 155 },
+    { "id": "leads", "lane": "data", "col": 5, "type": "database", "label": "Leads tab", "sublabel": "email captured", "width": 120 },
+    { "id": "weekly", "lane": "learn", "col": 0, "type": "external", "label": "Monday schedule", "sublabel": "gap review", "width": 120 },
+    { "id": "cluster", "lane": "learn", "col": 1, "type": "backend", "label": "Cluster + rank", "sublabel": "by frequency", "width": 125 },
+    { "id": "draft", "lane": "learn", "col": 2, "type": "backend", "label": "AI drafts entries", "sublabel": "candidate FAQ rows", "width": 140 },
+    { "id": "proposal", "lane": "learn", "col": 3, "type": "messagebus", "label": "Proposal email", "sublabel": "to owner", "width": 120 },
+    { "id": "pending", "lane": "gate", "col": 4, "type": "security", "label": "FAQ-Pending tab", "sublabel": "never self-publishes", "tag": "approval gate", "width": 140 },
+    { "id": "approve", "lane": "gate", "col": 5, "type": "security", "label": "Owner approves", "sublabel": "copies rows to FAQ", "width": 140 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "visitor", "to": "trig", "variant": "default" },
+    { "id": "e2", "from": "trig", "to": "merge", "variant": "default" },
+    { "id": "e3", "from": "faq", "to": "merge", "label": "FAQ rows", "variant": "dashed" },
+    { "id": "e4", "from": "merge", "to": "ai", "variant": "emphasis" },
+    { "id": "e5", "from": "ai", "to": "route", "variant": "emphasis" },
+    { "id": "e6", "from": "route", "to": "reply", "label": "answered", "variant": "emphasis" },
+    { "id": "e7", "from": "route", "to": "unans", "label": "miss", "variant": "default" },
+    { "id": "e8", "from": "route", "to": "leads", "label": "lead", "variant": "default" },
+    { "id": "e9", "from": "weekly", "to": "cluster", "variant": "default" },
+    { "id": "e10", "from": "unans", "to": "cluster", "label": "misses", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "e11", "from": "cluster", "to": "draft", "variant": "default" },
+    { "id": "e12", "from": "draft", "to": "proposal", "variant": "default" },
+    { "id": "e13", "from": "proposal", "to": "pending", "variant": "security" },
+    { "id": "e14", "from": "pending", "to": "approve", "variant": "security" },
+    { "id": "e16", "from": "setup", "to": "faq", "label": "provisions", "variant": "dashed", "role": "branch" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The differentiator",
+      "items": [
+        "Most FAQ bots drop misses — this one clusters them into draft FAQ entries",
+        "Human gate: the bot improves only on rows the owner approves"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Zero-credential proof",
+      "items": [
+        "Test workflow runs six visitor turns covering every route",
+        "SETUP lane provisions the spreadsheet and prints its ID"
+      ]
+    }
+  ]
+}
