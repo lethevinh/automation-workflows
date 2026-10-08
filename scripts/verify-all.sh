@@ -40,7 +40,7 @@ workflow_json_validity() {
 
 secret_scan() {
     if grep -rInE '(xoxb-[0-9A-Za-z-]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
-        --exclude-dir=.git --exclude='.env.example' .; then
+        --exclude-dir=.git .; then
         echo "Possible secret committed to the repo"
         return 1
     fi
