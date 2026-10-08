@@ -119,7 +119,7 @@ Tagline direction for the root README:
 Inside `meta.instanceId` in four of five exports:
 
 ```
-68c8fc1d…5b1c0f        (truncated on purpose — the full value was published
+<redacted>             (truncated on purpose — the full value was published
                         in commit c81a929 and must be treated as burnt)
 ```
 

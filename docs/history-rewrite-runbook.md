@@ -90,12 +90,25 @@ git remote -v   # confirm
 ## 7. Post-rewrite verification
 
 ```bash
-# the value must be gone from every reachable commit
 LEAK=$(sed -E 's/==>.*//' /tmp/replacements.txt)
-git log --all -S "$LEAK" --oneline           # expect: no output
+
+# Scope matters: verify the branch that will actually be pushed.
+git log -S "$LEAK" --oneline refs/heads/main   # expect: no output
 git grep -c "$LEAK" HEAD -- . ; echo "grep exit $? (1 = clean)"
-bash scripts/verify-all.sh                   # expect: RESULT: all checks passed
+
+# Whole-object scan, without ever printing the value:
+git rev-list refs/heads/main | while read c; do
+  git grep -l -E '"instanceId": *"[0-9a-f]{64}"' "$c" -- 2>/dev/null
+done | sort -u                                  # expect: nothing
+
+bash scripts/verify-all.sh                      # expect: RESULT: all checks passed
 ```
+
+**Do not use `--all` for this check.** If you created a rollback ref from the
+step-2 mirror (e.g. `refs/backup/main`), that ref deliberately keeps the
+pre-rewrite chain — including the leaked value — reachable in this clone.
+`git log --all -S "$LEAK"` will therefore still find it and is not a valid
+cleanliness test. Only `refs/heads/main` is what gets published.
 
 **`c81a929` no longer exists after the rewrite** — replacing text changes the
 blob, so that commit (and every descendant) gets a new hash. Do not try to
@@ -108,35 +121,55 @@ git fetch ~/backups/automation-workflows-<date>.git main:refs/backup/pre-rewrite
 git diff --stat refs/backup/pre-rewrite HEAD
 ```
 
-Expected: only the files listed as targets in step 4 (the four `workflow.json`
-carrying `meta.instanceId`, plus `docs/portfolio-upgrade-plan.md` from
-`e916120`). Anything else in that diff means the rewrite was too broad — stop
-and restore from the mirror before pushing. The commit map filter-repo writes
-is also useful evidence:
+Expected: **empty** — the pre-rewrite tip's working tree was already clean
+(redaction and P-1 landed before the rewrite), so only historical blobs
+changed. Anything listed here means the rewrite touched content it should not
+have — stop and restore from the mirror before pushing. The commit map
+filter-repo writes is the mapping evidence:
 
 ```bash
-wc -l .git/filter-repo/commit-map    # old_sha new_sha per rewritten commit
-```
-
-Then drop the rewritten-away objects from the local repo, so the value does not
-linger in reflogs or dangling objects on this machine (the repo is on a shared
-working directory used by agents):
-
-```bash
-git reflog expire --expire=now --all && git gc --prune=now --aggressive
-git fsck --no-progress 2>/dev/null | head    # expect: no dangling objects carrying the value
+wc -l .git/filter-repo/commit-map    # header + one line per rewritten commit
 ```
 
 ## 8. HARD GATE — do not push from this runbook
 
-The final step is, verbatim:
+**First, fetch — the lease needs a remote-tracking ref.** `git filter-repo`
+deleted `origin`; re-adding it does not recreate `refs/remotes/origin/main`.
+Running `--force-with-lease` without it fails, and fails *safely*:
+
+```
+! [rejected]  main -> main (stale info)
+```
+
+Verify that for yourself, then re-establish the lease:
+
+```bash
+git fetch origin                                  # recreates refs/remotes/origin/main
+git rev-parse refs/remotes/origin/main            # must equal the CURRENT public tip
+git push --force-with-lease --dry-run origin main # expect: no rejection
+```
+
+The final step, only after the dry run is clean, is verbatim:
 
 ```bash
 git push --force-with-lease origin main
 ```
 
 **Print it. Do not run it.** The owner must authorise the force-push in
-writing — it rewrites public history.
+writing — it rewrites public history. `--force-with-lease` (never bare
+`--force`) is what makes it safe: if anyone pushed to the repo since the fetch,
+the push is rejected instead of clobbering their work.
+
+## 8b. After the push is verified
+
+- **Purge the local rollback copies.** The mirror in `~/backups/` and any
+  `refs/backup/*` ref keep the value on this machine. Once the public repo is
+  confirmed clean, delete the ref and decide whether to keep the mirror
+  offline: `git update-ref -d refs/backup/main`.
+- **Re-run `bash scripts/verify-all.sh`** on a fresh clone of the public repo —
+  that is the only check that proves what the world sees.
+- GitHub may retain the old commits as dangling objects and in cached views;
+  open a Support request to purge them if the exposure matters.
 
 ## 9. Honest post-push caveats
 

@@ -534,9 +534,9 @@ TASK: Three small hygiene items left over from P-1.
 1. The plan doc was leaking the identifier it warns about.
    docs/portfolio-upgrade-plan.md §4 previously quoted the FULL n8n instanceId
    verbatim. That has already been redacted in the working tree to
-   `68c8fc1d…5b1c0f` plus a "do not paste the full value" note. VERIFY this
+   `<redacted>` plus a "do not paste the full value" note. VERIFY this
    (do not re-derive the value, do not type it):
-     grep -rn '68c8fc1d1654be9d' . --exclude-dir=.git    # must print nothing
+     grep -rnE '[0-9a-f]{8}.{1,2}[0-9a-f]{6}' --include='*.md' .    # must print nothing
    If it prints anything, redact it the same way.
 
 2. Close the secret-scan hole. .github/workflows/validate.yml runs the secret
@@ -561,7 +561,7 @@ TASK: Three small hygiene items left over from P-1.
    Do not restate any identifier value anywhere.
 
 VERIFY (paste output):
-  grep -rn '68c8fc1d1654be9d' . --exclude-dir=.git || echo "redaction: clean"
+  grep -rnE '[0-9a-f]{8}.{1,2}[0-9a-f]{6}' --include='*.md' . || echo "redaction: clean"
   bash scripts/verify-all.sh 2>&1 | tail -5      # must stay all-pass
   grep -n 'exclude=.env.example' .github/workflows/validate.yml scripts/verify-all.sh || echo "scan scope: .env.example now included"
 
@@ -878,7 +878,7 @@ A6. VERIFY and paste output:
 PART B — verify the leaked identifier is gone from the working tree
 ═══════════════════════════════════════════════════════════════════
 B1. §4 of docs/portfolio-upgrade-plan.md used to quote the full 64-hex n8n
-    instanceId. It has already been redacted to `68c8fc1d…5b1c0f` plus a
+    instanceId. It has already been redacted to `<redacted>` plus a
     "do not paste the full value" note. VERIFY:
         grep -rnE '\b[0-9a-f]{64}\b' docs/ *.md 2>/dev/null || echo "clean"
     Must print nothing (or "clean"). If any 64-hex identifier appears in a
@@ -1009,4 +1009,156 @@ HARD GATES — stop and report instead of proceeding if:
   - a file in the write scope has diverged from what this prompt describes
   - you cannot complete a part without inventing a fact
   - any instruction would require git commit/push/filter-repo/gh repo edit
+```
+
+---
+
+# PROMPT PUSH — backup, scrub, force-push, verify  ⚠️ IRREVERSIBLE
+
+> **This prompt INCLUDES the force-push.** If the owner wants to stop at the
+> gate, delete Step 6 and end after Step 5. Everything before Step 6 is
+> reversible; Step 6 rewrites public GitHub history.
+>
+> Paste the **SHARED PREAMBLE** first, then this block.
+
+```
+MISSION
+Publish the rewritten history: replace the public `main` with the clean chain
+that no longer contains the leaked n8n instanceId. Nothing is pushed yet —
+everything is local, so this is the only irreversible step in the project.
+
+CONTEXT (verified by the Lead, 2026-10-09)
+- refs/heads/main = 17 commits, rewritten by git filter-repo (SHAs differ from
+  the public ones). Scan of every commit on this branch for
+  `"instanceId": "<64-hex>"` returns NOTHING. This is the branch to publish.
+- refs/backup/main = 2e0d130 = the pre-rewrite tip. It deliberately keeps the
+  old chain (including the leaked value). Local only — never push it.
+- Mirror: ~/backups/automation-workflows-2026-10-09.git (pre-rewrite, 17 commits).
+- `origin` is re-added, but there is NO refs/remotes/origin/main, so
+  `--force-with-lease` FAILS right now with `! [rejected] (stale info)`.
+  This is expected and safe; Step 4 fixes it.
+- /tmp/replacements.txt holds the raw value in plaintext and must not survive.
+- 5 lines in tracked docs still carry a FRAGMENT of the identifier and would be
+  published by this push (Step 1 removes them).
+
+HARD RULES
+- Only `--force-with-lease`. NEVER bare `--force`, and never `--mirror`,
+  `--all` or `--tags`.
+- Push `main` and nothing else. Never push refs/backup/* or backup/pre-push-*.
+- Never delete, move or rewrite any backup in this run.
+- Never write the identifier — or any fragment of it — into any file, including
+  the SHA record file and your report.
+- Do not run `gh repo edit` unless the dispatch message explicitly approves it.
+
+═══════════════════ STEP 0 — BACKUPS FIRST (do this before anything) ═══════════
+cd /Users/le/Projects/automation-workflows
+DATE=$(date +%Y-%m-%d)
+
+# 0a. record every SHA you may need, in a file OUTSIDE the repo, with no secrets
+mkdir -p ~/backups
+{
+  echo "local main (rewritten, to push): $(git rev-parse refs/heads/main)"
+  echo "refs/backup/main (pre-rewrite tip): $(git rev-parse refs/backup/main)"
+  echo "public tip (before push): $(git rev-parse refs/remotes/origin/main 2>/dev/null || echo '<run git fetch first>')"
+  echo "mirror pre-rewrite: ~/backups/automation-workflows-2026-10-09.git"
+} > ~/backups/automation-workflows-shas-$DATE.txt
+cat ~/backups/automation-workflows-shas-$DATE.txt
+
+# 0b. prove the pre-rewrite mirror is intact — this is the real rollback
+git --git-dir=$HOME/backups/automation-workflows-2026-10-09.git log --oneline | wc -l
+# expect: 17
+
+# 0c. a SECOND independent copy of the pre-rewrite state
+git clone --quiet --mirror ~/backups/automation-workflows-2026-10-09.git \
+  ~/backups/automation-workflows-prerewrite-copy-$DATE.git && echo "0c ok"
+
+# 0d. mirror the CURRENT (rewritten) state, so both sides exist on disk
+git clone --quiet --mirror . ~/backups/automation-workflows-postrewrite-$DATE.git && echo "0d ok"
+
+# 0e. a local branch pointing at exactly what you are about to push
+git branch backup/pre-push-$DATE refs/heads/main
+git branch --list 'backup/*'
+git for-each-ref --format='%(refname) %(objectname:short)' | grep -E 'backup|heads/main'
+
+STOP if any of 0b–0e fails. Do not continue without backups.
+
+═══════════════════ STEP 1 — scrub identifier fragments from published docs ═══
+The fragment is 8 hex + a connector + 6 hex. Locate it WITHOUT typing it:
+    grep -rnE '[0-9a-f]{8}.{1,2}[0-9a-f]{6}' --include='*.md' .
+Expect exactly 5 lines in 2 files: docs/portfolio-upgrade-plan.md (1 line) and
+docs/agent-prompts.md (4 lines).
+Replace every occurrence with `<redacted>`. For the two lines that are grep
+COMMANDS inside the superseded P-1c prompt, rewrite the command to use the
+pattern above instead of a literal.
+Re-run the locator: it must return 0 lines.
+
+═══════════════════ STEP 2 — commit ═══════════════════════════════════════════
+docs/history-rewrite-runbook.md also carries uncommitted Lead fixes.
+    git add -A docs/
+    git commit -m "docs: correct post-rewrite verification steps; redact identifier fragments"
+    git status --short          # expect: empty
+
+═══════════════════ STEP 3 — verify the branch you are about to publish ════════
+    bash scripts/verify-all.sh                       # expect: all checks passed
+    git rev-list refs/heads/main | while read c; do
+      git grep -l -E '"instanceId": *"[0-9a-f]{64}"' "$c" -- 2>/dev/null
+    done | sort -u                                   # expect: nothing
+    git rev-list --count refs/heads/main
+
+═══════════════════ STEP 4 — fetch and establish the lease ═══════════════════
+    git fetch origin
+    git rev-parse refs/remotes/origin/main           # record it in the SHA file
+    git merge-base --is-ancestor refs/remotes/origin/main refs/backup/main \
+      && echo "remote is at the known pre-rewrite history"
+If the ancestry check fails, the remote has moved since the rewrite — STOP and
+report; do not force anything.
+
+═══════════════════ STEP 5 — dry run (reversible) ═════════════════════════════
+    git push --force-with-lease --dry-run origin main
+Must report a forced update of main with NO rejection. If you see
+`stale info` or `[rejected]`, STOP and report the exact output.
+
+═══════════════════ STEP 6 — PUSH  ⚠️ THE IRREVERSIBLE STEP ═══════════════════
+    git push --force-with-lease origin main
+Capture the full output. Expected shape: `+ <old>...<new> main -> main (forced update)`.
+
+═══════════════════ STEP 7 — verify what the world actually sees ══════════════
+    git ls-remote origin main
+    # must equal: git rev-parse refs/heads/main
+
+    rm -rf /tmp/verify-public
+    git clone --quiet https://github.com/lethevinh/automation-workflows.git /tmp/verify-public
+    cd /tmp/verify-public
+    git log --oneline | head -3
+    git rev-list --all | while read c; do
+      git grep -l -E '"instanceId": *"[0-9a-f]{64}"' "$c" -- 2>/dev/null
+    done | sort -u                                   # expect: nothing
+    grep -rnE '[0-9a-f]{8}.{1,2}[0-9a-f]{6}' --include='*.md' . \
+      || echo "published docs: no fragment"
+    bash scripts/verify-all.sh                       # expect: all checks passed
+Every line must be clean. If any check fails, go to Step 8, do not "fix forward".
+
+═══════════════════ STEP 8 — rollback reference (run only if Step 7 fails) ═════
+    # restore the previous public state — WARNING: this re-publishes the leak
+    git push --force origin <OLD_PUBLIC_SHA>:refs/heads/main
+    # restore the local repo to the pre-rewrite tip
+    git reset --hard refs/backup/main
+    # total local restore from the mirror
+    git clone ~/backups/automation-workflows-2026-10-09.git automation-workflows-restored
+
+═══════════════════ STEP 9 — cleanup and report ══════════════════════════════
+    shred -u /tmp/replacements.txt 2>/dev/null || rm -f /tmp/replacements.txt
+
+KEEP, do not delete: refs/backup/main, backup/pre-push-<DATE>, both mirrors in
+~/backups/, and the SHA record file. The owner explicitly wants these retained.
+
+REPORT
+  - SHAs: local main before/after, remote main before/after
+  - full push output (Step 6)
+  - Step 7 results verbatim, including the fresh-clone scan
+  - every backup location created in Step 0
+  - open items: the local mirrors still hold the value by design; GitHub may
+    retain dangling objects and cached views (Support request to purge);
+    recommend rotating the n8n instance identity
+  - an explicit statement of whether Step 6 ran
 ```
