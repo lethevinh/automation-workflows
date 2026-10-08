@@ -18,9 +18,10 @@ you hire me.
 
 **Nothing here is a toy demo.** Each workflow ships with:
 
-- A problem statement and measurable outcome
-- An architecture diagram and full setup guide
-- Sample data so you can run it yourself
+- A problem statement and the outcome it targets
+- An architecture diagram and a documented setup path
+- A zero-credential demo lane — import, click **Test workflow**, watch it
+  route every branch
 - The same structure I deliver on paid projects
 
 ## Featured workflows
@@ -69,14 +70,17 @@ retainer — your choice.
 | [`python/`](python/) | Standalone scripts & pipelines — tested, packaged |
 | [`ai-agents/`](ai-agents/) | Agent setups — prompts, configs, orchestration |
 | [`skills/`](skills/) | Reusable agent skills (SKILL.md format) |
-| [`docs/case-studies/`](docs/case-studies/) | Deep-dives: problem → build → measured results |
-| [`examples/`](examples/) | Sample data & fixtures so you can run workflows yourself |
+| [`docs/case-studies/`](docs/case-studies/) | Deep-dives: problem → build → measured results — first one in progress |
+| [`examples/`](examples/) | Per-workflow sample inputs & fixtures — in progress |
 | [`scripts/`](scripts/) | Repo tooling — mermaid node-graph generator, archify SVG extractor |
 
-Every workflow follows the [standard template](docs/workflow-template.md):
-problem, diagram, setup, results — and ships an
+Every workflow ships an
 [archify](https://github.com/tt-a1i/archify)-rendered architecture diagram
-(`assets/diagram.svg`, source `assets/diagram.json`).
+(`assets/diagram.svg`, source `assets/diagram.json`) and a README covering
+problem, solution, stack, setup and a verification run. The
+[standard template](docs/workflow-template.md) defines the target format
+those READMEs are being standardized to — adding Reliability, Results &
+impact and Sanitization sections.
 
 ## Tech stack
 
