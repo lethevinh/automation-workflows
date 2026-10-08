@@ -18,7 +18,7 @@ flowchart TB
     n1(["Nightly 21:30"])
     n2["Demo till log (entries + history)"]
     n3[("Read today's till entries")]
-    n4[("Read prior-30d till log"])
+    n4[("Read prior-30d till log")]
     n5["Merge intake: entries + history"]
     n6["Reconcile, score history, escalate repeats"]
     n7{"Route outcome"}

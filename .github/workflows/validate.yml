@@ -34,6 +34,149 @@ jobs:
           fi
           echo "No secrets found."
 
+      # --- portfolio guardrails (plan P5) ----------------------------------
+      # Keep these steps in sync with scripts/verify-all.sh, which runs the
+      # same checks locally.
+
+      - name: Folder contract
+        run: |
+          rc=0
+          for d in n8n/*/; do
+            for f in workflow.json README.md assets/diagram.svg \
+                     assets/diagram.json .env.example; do
+              if [ ! -f "$d$f" ]; then
+                echo "::error::missing $d$f"
+                rc=1
+              fi
+            done
+          done
+          for d in examples/*/; do
+            if [ ! -f "${d}test-data.json" ]; then
+              echo "::error::missing ${d}test-data.json"
+              rc=1
+            fi
+          done
+          if [ "$rc" -eq 0 ]; then
+            echo "Folder contract: all required files present."
+          fi
+          exit "$rc"
+
+      - name: Mermaid drift
+        run: |
+          python3 scripts/render-mermaid.py n8n/*/
+          git diff --exit-code -- n8n/
+
+      - name: Sanitization residue
+        run: |
+          rc=0
+          # Quoted JSON keys anywhere under n8n/. README prose mentions these
+          # names in backticks, which this pattern does not match.
+          if git grep -nE '"instanceId"|"versionId"|"webhookId"' -- n8n/; then
+            echo "::error::leaked-identifier keys found under n8n/"
+            rc=1
+          fi
+          # Stronger bareword scan on the exports only (catches the tokens
+          # inside parameter strings as well).
+          if git grep -nE 'instanceId|versionId|webhookId' -- 'n8n/*/workflow.json'; then
+            echo "::error::identifier residue in a workflow export"
+            rc=1
+          fi
+          # Top-level export keys removed by P-1 must not come back.
+          python3 - <<'EOF' || rc=1
+          import glob
+          import json
+          import sys
+
+          bad = []
+          for f in sorted(glob.glob("n8n/*/workflow.json")):
+              d = json.load(open(f))
+              for key in ("id", "versionId", "createdAt", "updatedAt",
+                          "pinData", "nodeGroups"):
+                  if key in d:
+                      bad.append(f"{f}: top-level {key!r} present")
+              if isinstance(d.get("meta"), dict) and "instanceId" in d["meta"]:
+                  bad.append(f"{f}: meta.instanceId present")
+          if bad:
+              print("\n".join(bad))
+              sys.exit(1)
+          print("Top-level identifiers: clean.")
+          EOF
+          exit "$rc"
+
+      - name: Placeholder scan
+        run: |
+          python3 - <<'EOF'
+          import re
+          import subprocess
+          import sys
+
+          # These two planning docs legitimately discuss placeholders and
+          # identifiers.
+          EXCLUDE = {"docs/portfolio-upgrade-plan.md",
+                     "docs/agent-prompts.md"}
+
+          # Owner-pending hire-me CTAs in the root README, to be replaced by
+          # P3 once the owner supplies links (plan section 6). Allowlisted so
+          # the scan lands green in wave 2; any NEW placeholder, or these
+          # tokens anywhere else, still fails.
+          ALLOWED_TOKENS = {
+              "README.md": {
+                  "[your-upwork-profile]",
+                  "[your-linkedin]",
+                  "[your-email]",
+                  "[your-site]",
+              },
+          }
+
+          files = subprocess.check_output(
+              ["git", "ls-files", "*.md"], text=True
+          ).split()
+
+          bad = []
+          for path in files:
+              if path in EXCLUDE:
+                  continue
+              with open(path, encoding="utf-8") as fh:
+                  for i, line in enumerate(fh, 1):
+                      for pat in ("your_chat_id", "TODO"):
+                          if pat in line:
+                              bad.append(f"{path}:{i}: contains {pat!r}")
+                      tokens = re.findall(r"\[your-[^\s\]]*\]", line)
+                      if line.count("[your-") != len(tokens):
+                          bad.append(
+                              f"{path}:{i}: unterminated '[your-' placeholder"
+                          )
+                      for tok in tokens:
+                          if tok not in ALLOWED_TOKENS.get(path, set()):
+                              bad.append(f"{path}:{i}: placeholder {tok!r}")
+          if bad:
+              print("\n".join(bad))
+              sys.exit(1)
+          print("Placeholder scan: clean.")
+          EOF
+
+      - name: Fixture test-data.json files parse
+        run: |
+          rc=0
+          found=0
+          for f in examples/*/test-data.json; do
+            [ -e "$f" ] || continue
+            found=1
+            if jq empty "$f"; then
+              echo "ok $f"
+            else
+              rc=1
+            fi
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "::error::no test-data.json fixtures found"
+            rc=1
+          fi
+          exit "$rc"
+
+      - name: Demo lane reaches zero credentialed nodes
+        run: python3 scripts/verify-demo-lane.py
+
   python:
     runs-on: ubuntu-latest
     steps:
