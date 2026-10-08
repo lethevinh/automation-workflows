@@ -204,7 +204,6 @@
       ]
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking 'Test workflow'": {
       "main": [
@@ -296,11 +295,5 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "5c287fe9-b321-4996-aba9-8bfb4e37a0f8",
-  "meta": {
-    "instanceId": "REMOVED-INSTANCE-ID"
-  },
-  "nodeGroups": [],
-  "id": "L0h3gg4dfBHCmCVQ",
   "tags": []
 }

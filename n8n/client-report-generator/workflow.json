@@ -1,7 +1,4 @@
 {
-  "createdAt": "2026-10-07T00:00:00.000Z",
-  "updatedAt": "2026-10-07T00:00:00.000Z",
-  "id": "client-report-generator-0001",
   "name": "Generate weekly client reports from a config sheet with Google Sheets, Meta Ads, Google Ads, GA4 and OpenAI",
   "nodes": [
     {
@@ -3017,6 +3014,5 @@
     "timezone": "GMT"
   },
   "active": false,
-  "pinData": {},
   "tags": []
 }

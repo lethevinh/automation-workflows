@@ -195,7 +195,6 @@
         144,
         608
       ],
-      "webhookId": "f80a3321-0812-44ca-b776-76fdae98a17e",
       "notes": "Public hosted webchat. After activation, copy the chat URL into your site's embed snippet."
     },
     {
@@ -467,7 +466,6 @@
         2384,
         624
       ],
-      "webhookId": "ad7e0662-851e-495e-96f2-947125d10736",
       "notes": "One alert per gap or lead — the owner sees the question and what the bot told the visitor."
     },
     {
@@ -599,7 +597,6 @@
         1264,
         848
       ],
-      "webhookId": "fc142e9e-d18f-4f8a-a334-881b511cfab7",
       "notes": "One email per week: most-asked unanswered questions plus the AI drafts to approve."
     },
     {
@@ -841,7 +838,6 @@
       "notes": "The output shows the new spreadsheet_id — paste it into the Document field of the Sheets nodes in lanes A and B."
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking 'Test workflow'": {
       "main": [
@@ -1232,11 +1228,5 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "4df66ddf-9ee8-4673-9e41-699dfc6c2e32",
-  "meta": {
-    "instanceId": "REMOVED-INSTANCE-ID"
-  },
-  "nodeGroups": [],
-  "id": "KhY6O36AuUpyYeIo",
   "tags": []
 }

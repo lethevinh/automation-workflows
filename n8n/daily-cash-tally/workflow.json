@@ -282,7 +282,6 @@
         1392,
         912
       ],
-      "webhookId": "699f1b17-8994-4bf4-96f7-70b7318ac953",
       "disabled": true,
       "notes": "First offenses and submission gaps — the daily-operational channel."
     },
@@ -300,7 +299,6 @@
         1168,
         1104
       ],
-      "webhookId": "21c19649-89f9-43ab-806d-a038daa7fc0c",
       "disabled": true,
       "notes": "Repeat offenders get the urgent channel — a pattern is worth paging for, a single variance is not."
     },
@@ -333,7 +331,6 @@
         1392,
         1488
       ],
-      "webhookId": "429e9a53-bb2c-4ba1-b9ce-2b0b6fe8ed9b",
       "disabled": true,
       "notes": "Exactly one owner digest per run — totals, cumulative leak, and every alert listed."
     },
@@ -438,7 +435,6 @@
       "notes": "Optional. Enable to have an LLM narrate the digest in plain language. When enabled, map Telegram's text to {{ $json.message.content }}."
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking 'Test workflow'": {
       "main": [
@@ -589,11 +585,5 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "0d74aa21-b1b0-4344-bc63-90900bc1eae1",
-  "meta": {
-    "instanceId": "REMOVED-INSTANCE-ID"
-  },
-  "nodeGroups": [],
-  "id": "4J2XXYOv1sbZBmpO",
   "tags": []
 }

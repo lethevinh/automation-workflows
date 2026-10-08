@@ -284,7 +284,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "78145ac3-ebf1-4a64-9c8d-b539903742ea",
       "notes": "Unlabeled recent inbox mail, raw format — full body is decoded for the LLM, not just the snippet."
     },
     {
@@ -728,7 +727,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "b93c9fac-3d5c-4680-89a7-536555988952",
       "onError": "continueRegularOutput",
       "notes": "Label ID (not name) from Workflow Config. Applied AFTER the ledger write — a failed run re-scans instead of losing the message."
     },
@@ -845,7 +843,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "0a5f2259-5699-45a8-bf6b-e0bf5cc6e9e9",
       "onError": "continueRegularOutput"
     },
     {
@@ -955,7 +952,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "ec1738e2-34d0-4973-914a-7541354461b7",
       "onError": "continueRegularOutput",
       "notes": "The sweep digest is delivered here — it is not a dead end."
     },
@@ -1176,7 +1172,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "cd4999ff-3de7-474f-b924-32c9134ac6da",
       "onError": "continueRegularOutput",
       "notes": "Reads the pre-write item — sheet output only carries mapped columns."
     },
@@ -1241,7 +1236,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "webhookId": "763c5b99-13a5-42ce-aea4-e36725a03ccf",
       "onError": "continueRegularOutput",
       "notes": "3+ days overdue skips the draft queue — straight to you."
     },
@@ -1521,7 +1515,6 @@
       "notes": "Output shows the new spreadsheet_id — paste it into the Workflow Config node."
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking 'Test workflow'": {
       "main": [
@@ -2065,11 +2058,5 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "3256c33c-e710-4152-afe9-be3ac5cb00c4",
-  "meta": {
-    "instanceId": "REMOVED-INSTANCE-ID"
-  },
-  "nodeGroups": [],
-  "id": "jSrKpeVNpAU6jpMN",
   "tags": []
 }
