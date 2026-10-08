@@ -1,0 +1,146 @@
+{
+  "_about": "Input contract for n8n/client-report-generator. Mirrors the fixtures embedded in its 'Demo config (fixture)' and 'Demo * fetch' code nodes. The one-click demo lane replays demo_config_rows exactly — nothing here needs to be repointed at a trigger.",
+
+  "config_row_shape": {
+    "_comment": "One row per client in the 'config' Google Sheet tab. Every src_*/sink_* flag, plus delivery_mode / brand_* / alert_threshold_pct, is a cell the owner edits — the workflow is never touched.",
+    "client_id": "acme",
+    "client_name": "Acme Retail",
+    "enabled": "yes",
+    "src_meta_ads": "yes",
+    "src_google_ads": "yes",
+    "src_ga4": "yes",
+    "sink_gmail": "yes",
+    "sink_slack": "yes",
+    "recipients_email": "team@example.com",
+    "slack_channel": "#acme-weekly",
+    "meta_ad_account_id": "act_demo_acme",
+    "google_ads_customer_id": "demo-acme-1234",
+    "ga4_property_id": "demo-acme-ga4",
+    "delivery_mode": "send | draft  (optional — defaults to send; draft files a Gmail draft for review instead of sending)",
+    "brand_name": "optional — report header brand; defaults to client_name",
+    "brand_color": "optional — e.g. #33475b; an invalid value falls back to a neutral default",
+    "brand_logo_url": "optional — empty renders no <img>; the layout never depends on it",
+    "alert_threshold_pct": "optional — e.g. 15; any metric whose |WoW delta| reaches this is FLAGGED in the report and counted in the digest",
+    "_fixture_only_fields": "sim_error_source and already_sent exist only in demo_config_rows — they fake a source outage and pre-seed the dedupe check. Real config rows never carry them."
+  },
+
+  "demo_config_rows": [
+    {
+      "client_id": "acme",
+      "client_name": "Acme Retail",
+      "enabled": "yes",
+      "src_meta_ads": "yes",
+      "src_google_ads": "yes",
+      "src_ga4": "yes",
+      "sink_gmail": "yes",
+      "sink_slack": "yes",
+      "recipients_email": "team@example.com",
+      "slack_channel": "#acme-weekly",
+      "meta_ad_account_id": "act_demo_acme",
+      "google_ads_customer_id": "demo-acme-1234",
+      "ga4_property_id": "demo-acme-ga4",
+      "sim_error_source": "meta_ads"
+    },
+    {
+      "client_id": "boutique",
+      "client_name": "Boutique Hotels",
+      "enabled": "yes",
+      "src_meta_ads": "no",
+      "src_google_ads": "yes",
+      "src_ga4": "yes",
+      "sink_gmail": "yes",
+      "sink_slack": "no",
+      "recipients_email": "gm@example.net",
+      "slack_channel": "",
+      "meta_ad_account_id": "act_demo_boutique",
+      "google_ads_customer_id": "demo-btq-5678",
+      "ga4_property_id": "demo-btq-ga4",
+      "already_sent": "yes"
+    },
+    {
+      "client_id": "coachlee",
+      "client_name": "Coach Lee",
+      "enabled": "yes",
+      "src_meta_ads": "no",
+      "src_google_ads": "no",
+      "src_ga4": "yes",
+      "sink_gmail": "yes",
+      "sink_slack": "no",
+      "recipients_email": "",
+      "slack_channel": "",
+      "meta_ad_account_id": "",
+      "google_ads_customer_id": "",
+      "ga4_property_id": "demo-lee-ga4"
+    },
+    {
+      "client_id": "pausedco",
+      "client_name": "Paused Co",
+      "enabled": "no",
+      "src_meta_ads": "no",
+      "src_google_ads": "no",
+      "src_ga4": "yes",
+      "sink_gmail": "yes",
+      "sink_slack": "no",
+      "recipients_email": "ops@example.org",
+      "slack_channel": "",
+      "meta_ad_account_id": "",
+      "google_ads_customer_id": "",
+      "ga4_property_id": "demo-paused-ga4"
+    }
+  ],
+
+  "edge_cases": {
+    "_comment": "Which edge case each demo row exercises, and the verdict the engine produces. The demo code adds live:false to every row.",
+    "acme": "all three sources + both sinks; sim_error_source:meta_ads fakes a Meta outage → one 'failure' alert via Compose source alert; google_ads + ga4 still report; delivered via Gmail + Slack",
+    "boutique": "already_sent:yes pre-seeds the dedupe key → Dedupe check flags is_duplicate → Already sent? → Compose duplicate alert; nothing is re-sent",
+    "coachlee": "sink_gmail:yes but recipients_email empty → no usable sink → Validate clients emits a 'missing-data' alert; the row never reaches the engine",
+    "pausedco": "enabled:no → Validate clients marks it 'skipped'; one skipped line in the run digest"
+  },
+
+  "source_adapter_payloads": {
+    "_contract": "Every adapter — live or demo, existing or docked at 'Extension dock' — emits contract rows {kind:'metric', client_id, client_name, source, report_date, metric, value, prev_value, sinks, recipients_email, slack_channel, live, delivery_mode, brand_name, brand_color, brand_logo_url, alert_threshold_pct}. 'Compute WoW deltas' adds delta_pct deterministically; the AI only ever sees the finished table. The raw fetch-response shapes below are what each 'Normalize *' node consumes; numbers match the committed acme demo fixture so the same deltas reproduce.",
+    "meta_ads": {
+      "fetch_response_shape": {
+        "data": [
+          {"spend": 700, "impressions": 40000, "clicks": 1000},
+          {"spend": 840, "impressions": 41200, "clicks": 950}
+        ]
+      },
+      "normalize_note": "'Normalize Meta Ads' treats data[last] as this week and data[last-1] as previous week, then emits one contract row per metric in [spend, impressions, clicks].",
+      "adapter_contract_rows_emitted": [
+        {"kind": "metric", "client_id": "acme", "source": "meta_ads", "metric": "spend", "value": 840, "prev_value": 700, "expected_delta_pct": 20.0},
+        {"kind": "metric", "client_id": "acme", "source": "meta_ads", "metric": "impressions", "value": 41200, "prev_value": 40000, "expected_delta_pct": 3.0},
+        {"kind": "metric", "client_id": "acme", "source": "meta_ads", "metric": "clicks", "value": 950, "prev_value": 1000, "expected_delta_pct": -5.0}
+      ]
+    },
+    "google_ads": {
+      "fetch_response_shape": [
+        {
+          "results": [
+            {"segments": {"week": "2026-10-05"}, "metrics": {"cost_micros": "700000000", "clicks": "2900", "conversions": "50"}},
+            {"segments": {"week": "2026-10-12"}, "metrics": {"cost_micros": "840000000", "clicks": "3100", "conversions": "45"}}
+          ]
+        }
+      ],
+      "normalize_note": "'Normalize Google Ads' groups searchStream results by segments.week (latest = this week, previous = last), converts cost_micros to dollars, and emits one contract row per metric in [spend, clicks, conversions]. The committed acme fixture exercises spend + conversions; the clicks row below shows the remaining shape.",
+      "adapter_contract_rows_emitted": [
+        {"kind": "metric", "client_id": "acme", "source": "google_ads", "metric": "spend", "value": 840, "prev_value": 700, "expected_delta_pct": 20.0},
+        {"kind": "metric", "client_id": "acme", "source": "google_ads", "metric": "clicks", "value": 3100, "prev_value": 2900, "expected_delta_pct": 6.9},
+        {"kind": "metric", "client_id": "acme", "source": "google_ads", "metric": "conversions", "value": 45, "prev_value": 50, "expected_delta_pct": -10.0}
+      ]
+    },
+    "ga4": {
+      "fetch_response_shape": {
+        "rows": [
+          {"dimensionValues": [{"value": "date_range_0"}], "metricValues": [{"value": "1240"}, {"value": "31"}]},
+          {"dimensionValues": [{"value": "date_range_1"}], "metricValues": [{"value": "1100"}, {"value": "30"}]}
+        ]
+      },
+      "normalize_note": "'Normalize GA4' sums metricValues by dimension: date_range_0 = this week, date_range_1 = previous; index 0 = sessions, index 1 = conversions.",
+      "adapter_contract_rows_emitted": [
+        {"kind": "metric", "client_id": "acme", "source": "ga4", "metric": "sessions", "value": 1240, "prev_value": 1100, "expected_delta_pct": 12.7},
+        {"kind": "metric", "client_id": "acme", "source": "ga4", "metric": "conversions", "value": 31, "prev_value": 30, "expected_delta_pct": 3.3}
+      ]
+    }
+  }
+}

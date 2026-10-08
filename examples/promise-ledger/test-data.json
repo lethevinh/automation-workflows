@@ -1,0 +1,38 @@
+[
+  {
+    "subject": "Re: website audit",
+    "from": "mai.nguyen@example.com",
+    "body": "I will send you the signed contract and the brand assets by Friday.",
+    "sim": "clear_promise"
+  },
+  {
+    "subject": "This week at Acme — product news",
+    "from": "newsletter@example.com",
+    "body": "Here's what's new: dark mode shipped, plus three customer case studies to read.",
+    "sim": "no_promise"
+  },
+  {
+    "subject": "Re: pricing update",
+    "from": "tom@example.com",
+    "body": "I will send the updated rate card soon, probably early next week.",
+    "sim": "vague_promise"
+  },
+  {
+    "subject": "Re: website audit",
+    "from": "mai.nguyen@example.com",
+    "body": "I will send you the signed contract and the brand assets by Friday.",
+    "sim": "repeat"
+  },
+  {
+    "subject": "corrupted",
+    "from": "x@y.z",
+    "body": "__force_bad_ai__",
+    "sim": "bad_ai"
+  },
+  {
+    "subject": "Contract + assets attached",
+    "from": "mai.nguyen@example.com",
+    "body": "As promised — the signed contract and brand assets are attached.",
+    "sim": "fulfillment"
+  }
+]

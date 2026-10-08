@@ -1,0 +1,38 @@
+[
+  {
+    "question": "What are your support hours?",
+    "visitor_email": "mia@example.com",
+    "session_id": "demo-s1",
+    "sim": "answerable"
+  },
+  {
+    "question": "Do you offer SSO on the starter plan?",
+    "visitor_email": "mia@example.com",
+    "session_id": "demo-s1",
+    "sim": "gap"
+  },
+  {
+    "question": "Interested in enterprise — reach me at visitor@example.com",
+    "visitor_email": "",
+    "session_id": "demo-s2",
+    "sim": "lead"
+  },
+  {
+    "question": "   ",
+    "visitor_email": "sam@example.com",
+    "session_id": "demo-s3",
+    "sim": "empty"
+  },
+  {
+    "question": "Do you offer SSO on the starter plan?",
+    "visitor_email": "mia@example.com",
+    "session_id": "demo-s1",
+    "sim": "repeat"
+  },
+  {
+    "question": "__force_bad_ai__",
+    "visitor_email": "sam@example.com",
+    "session_id": "demo-s3",
+    "sim": "bad_ai"
+  }
+]

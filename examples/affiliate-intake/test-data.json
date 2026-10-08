@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Ari Lopez",
+    "email": "ari@example.com",
+    "platform": "instagram",
+    "handle": "@ari.moves",
+    "followers": 42000,
+    "engagement_rate": 4.8,
+    "posts": 210,
+    "niche": "fitness"
+  },
+  {
+    "name": "Nate Null",
+    "platform": "youtube",
+    "handle": "@nate",
+    "followers": 51000,
+    "engagement_rate": 3.1,
+    "posts": 88,
+    "niche": "tech"
+  },
+  {
+    "name": "Mia Moon",
+    "email": "mia@example.com",
+    "platform": "instagram",
+    "handle": "@mia.moon",
+    "followers": 2000000,
+    "engagement_rate": 9.9,
+    "posts": 0,
+    "niche": "travel"
+  },
+  {
+    "name": "Ari Again",
+    "email": "ari@example.com",
+    "platform": "instagram",
+    "handle": "@ari.alt",
+    "followers": 8000,
+    "engagement_rate": 2.5,
+    "posts": 60,
+    "niche": "fitness"
+  },
+  {
+    "name": "Sam Small",
+    "email": "sam@example.com",
+    "platform": "twitch",
+    "handle": "@sam.plays",
+    "followers": 900,
+    "engagement_rate": 1.1,
+    "posts": 40,
+    "niche": "gaming"
+  }
+]
