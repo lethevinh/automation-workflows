@@ -241,21 +241,12 @@ yes/no cell per source and per delivery channel** — then:
 - **Idempotent `reports` ledger** keyed on `client_id + ISO week` —
   re-runs in the same week are skipped as duplicates, never double-sent
 - **Per-source failure isolation** — one bad fetch alerts without blocking
-  other clients; instance-level Error Trigger emails the owner on
-  unhandled failures
+  other clients; a dedicated Error Trigger lane emails the operator on
+  unhandled failures once armed (one config step — see
+  [Reliability & error handling](#reliability--error-handling))
 - One-click SETUP lane provisions the workbook and prints the ID
 
-## Stack & credentials
-
-87 nodes — Google Sheets, Gmail, Slack, OpenAI, HTTP Request (Meta/GA4/
-Slack via Header Auth, Google Ads via Custom Auth for its two-header
-requirement). Works on n8n Cloud — no env vars needed.
-
-Credentials for production: Gmail, Google Sheets, OpenAI, plus provider
-tokens on the HTTP nodes. **Test workflow runs a four-client demo with
-zero credentials.** See [SETUP.md](SETUP.md).
-
-## Why it's different
+Versus the usual approach:
 
 | Typical report template | This workflow |
 |---|---|
@@ -267,6 +258,74 @@ zero credentials.** See [SETUP.md](SETUP.md).
 | Send-only | `delivery_mode=draft` review seam |
 | Fixed layout | Per-client branded HTML from config cells |
 
+## Stack & credentials
+
+87 nodes — Google Sheets, Gmail, Slack, OpenAI, HTTP Request (Meta/GA4/
+Slack via Header Auth, Google Ads via Custom Auth for its two-header
+requirement). Works on n8n Cloud — no env vars needed.
+
+Credentials for production: Gmail, Google Sheets, OpenAI, plus provider
+tokens on the HTTP nodes. **Test workflow runs a four-client demo with
+zero credentials.** See [SETUP.md](SETUP.md) and the credential checklist
+in [`.env.example`](.env.example).
+
+## Setup
+
+The full walkthrough is [SETUP.md](SETUP.md) — the short version:
+
+1. **Import** `workflow.json` (n8n → Workflows → Import from File).
+2. **Attach credentials** — Gmail, Google Sheets and OpenAI on the nodes
+   that ask, plus one generic HTTP credential per provider node (Header
+   Auth for Meta/GA4/Slack, Custom Auth for Google Ads — see
+   `.env.example`).
+3. **Run the setup lane once** — press play on
+   `SETUP — press play on this node once`; it creates the
+   *Weekly Client Reports* workbook with seeded `config` + `reports`
+   tabs and prints the `spreadsheet_id`.
+4. **Two nodes, two values** — paste the id into `Workflow Config`
+   (`sheet_id`) and your address into `Operator email` (`to`).
+5. **Fill the config tab** — one row per client; `src_*`/`sink_*` cells
+   toggle that client's sources and delivery channels.
+6. **Activate** — runs every Monday 09:00 (workflow timezone, shipped
+   GMT). Recommended: Settings → *Error workflow* → pick this same
+   workflow, which arms the `On workflow error` lane.
+
+### Run it yourself
+
+The one-click demo needs no setup at all: import `workflow.json`, press
+**Test workflow**, and the committed fixture in `Demo config (fixture)`
+runs four clients through the real engine — a simulated Meta Ads outage,
+an already-sent duplicate, a missing-recipient row and a disabled
+client — ending in one run digest. Demo items carry `live: false`
+end to end, so no credential node is ever reached.
+
+The input contract the demo replays — the config-row shape plus one
+payload per source adapter — is documented in
+[`examples/client-report-generator/`](../../examples/client-report-generator/).
+The fixture *is* the demo input: there is no trigger to repoint; the
+files there document the shape for your own `config` tab and adapters.
+
+## Customize
+
+The workflow is configured by cells, not edits — per client, in the
+`config` tab:
+
+- `src_meta_ads` / `src_google_ads` / `src_ga4` — `yes`/`no` per source;
+  a `no` means the fetch branch never expands for that client
+- `sink_gmail` + `recipients_email`, `sink_slack` + `slack_channel` —
+  per-client delivery channels
+- `delivery_mode` — `send` (default) mails the report; `draft` files it
+  into Gmail drafts for your review first
+- `brand_name` / `brand_color` / `brand_logo_url` — branded HTML header
+  (empty falls back to client name + neutral color)
+- `alert_threshold_pct` — any metric whose |WoW| reaches this percent is
+  FLAGGED in the report and counted in the digest
+
+New sources and sinks attach at the `Extension dock` /
+`Sink extension dock` outputs: add a rule on `Source route` /
+`Sink route` plus a fetch+normalize (or send) pair emitting the
+documented contract row — the engine needs no changes.
+
 ## Verification
 
 - Container pilot on `n8n:latest` (zero credentials): digest exactly 1
@@ -277,6 +336,107 @@ zero credentials.** See [SETUP.md](SETUP.md).
   pause/skip, draft routing, anomaly flags)
 - Slack delivery gated on the API `ok` flag — the ledger never records an
   undelivered report
+
+## Reliability & error handling
+
+Every mechanism below names the node that implements it.
+
+- **Retry policy** — all 15 credentialed nodes ship with
+  `retryOnFail: true` + `maxTries: 3`: the 6 Google Sheets, 4 Gmail,
+  4 HTTP Request and 1 OpenAI nodes.
+- **Live/demo isolation** — ten gating IFs control the fetch and delivery
+  path: eight test `$json.live` (`Meta Ads live?`, `Google Ads live?`,
+  `GA4 live?`, `Prose live?`, `Gmail live?`, `Slack live?`,
+  `Digest is live?`, and `Record report?` — the last also requires
+  `status === 'reported'`, so the ledger is only written for live,
+  actually-delivered reports), and two route `delivery_mode`
+  (`Delivery mode: draft?`, `Demo delivery: draft?`). Demo items carry
+  `live: false` end to end; no credential node is reachable in a demo run.
+- **Config-sheet-driven toggles** — `Expand enabled sources` fans out one
+  item per enabled `src_*` cell and `Fan out sinks` one per enabled
+  `sink_*` cell; a `no` cell means that branch never executes. Bad rows
+  are caught by `Validate clients` and become `missing-data` or `skipped`
+  items instead of failures.
+- **Per-source failure isolation** — `Fetch Meta Ads insights`,
+  `Fetch Google Ads metrics` and `Fetch GA4 report` each route their
+  error output to `Compose source alert`: one failed fetch becomes one
+  alert while the client's other sources — and every other client —
+  still finish. Unhandled source names fall through `Source route` to
+  the `Extension dock`, which marks them skipped with a reason.
+- **Sink-level failure isolation** — `Send report email`,
+  `Create report draft`, `Post report to Slack` and `Record report` route
+  their error output to `Compose sink alert`. Slack is double-checked
+  after the call: `Slack delivered?` reads the API `ok` flag and an
+  `ok:false` response goes to the alert path — the ledger never records
+  an undelivered report.
+- **Idempotent reports ledger** — `Collect sent keys` reads the `reports`
+  tab, `Dedupe check` builds keys as `client_id` + ISO week (`kkkk-Wxx`)
+  and `Already sent?` skips duplicates before any send happens;
+  `Record report` is an `appendOrUpdate` matched on `dedupe_key`. A
+  re-run in the same week is a duplicate, not a double-send.
+- **Deterministic numbers** — `Compute WoW deltas` and
+  `Group report table` compute `delta_pct` and anomaly flags in Code;
+  `Build report prompt` hands the AI a finished table under a system
+  prompt that forbids inventing figures. The AI writes prose only, and
+  `Demo narrative` mirrors the same `{narrative}` contract with zero
+  credentials.
+- **Exactly one run digest** — `Run digest` collapses the whole run to a
+  single item (delivered / skipped / alerts / anomaly flags);
+  `Digest is live?` keeps demo runs off the operator's inbox.
+- **Human review seam** — `delivery_mode=draft` routes Gmail through
+  `Create report draft` instead of `Send report email`; a created draft
+  still counts as delivered for the ledger, so re-runs never re-draft.
+- **Error Trigger lane — armed by one config step.** `On workflow error`
+  → `Operator email` → `Format error alert` →
+  `Email owner: workflow error` formats and mails any unhandled failure
+  with the failing node and execution link. **It does not fire out of the box:** an n8n Error
+  Trigger only runs when a workflow selects this one as its Error
+  Workflow, and the export deliberately ships without a
+  `settings.errorWorkflow` reference. Arm it via Settings → *Error
+  workflow* → this workflow (SETUP.md Step 6) — for this workflow or any
+  sibling you point at it. Note the shared `Operator email` node also
+  feeds the live digest path; `Format error alert` and
+  `Format digest email` each self-guard on their real input, so only the
+  correct mail can ever send.
+- **One-click SETUP lane** — `SETUP — press play on this node once` →
+  `Create report workbook` → `Seed tabs` → `Route by tab` →
+  `Shape config row` / `Shape reports row` → `Write config tab` /
+  `Write reports tab` → `Print sheet id + next step`: creates the
+  workbook, seeds both tabs and prints the `spreadsheet_id` for
+  `Workflow Config`.
+
+## Results & impact
+
+### Evidence — verifiable from this repo
+
+| Claim | Evidence |
+|---|---|
+| Zero-credential demo lane end to end | Container pilot on `n8n:latest` with no credentials attached — PASS |
+| Exactly one run digest per run | `Run digest` emitted exactly 1 item in the pilot run |
+| Happy-path throughput | 16 items flowed the report path in the pilot run |
+| Alert coverage | Missing-data, duplicate and failure alerts observed 3/3 — PASS |
+| Config-driven, not hardcoded | Three config variants replayed through the same workflow — pinned deltas verified (per-client sources, pause/skip, draft routing, anomaly flags) |
+| No false ledger writes | Slack posts only count when the API returns `ok:true` (`Slack delivered?` gate) |
+
+### Business outcome
+
+<!-- owner-metric: hours of manual report-writing this replaces per week
+     (per client or per agency) -->
+<!-- owner-metric: how many clients the config sheet drives in production,
+     and for how long it has run -->
+<!-- owner-metric: reporting-tool spend it replaced, in $/month -->
+
+## Sanitization notes
+
+This export is clean for public sharing: no credential blocks, no `$env`
+references, no `pinData` and no webhook IDs (the workflow has no webhook
+triggers). Before publication it had been hand-edited
+(`id: client-report-generator-0001`); that workflow `id` and the
+`createdAt`/`updatedAt` timestamps were subsequently removed, so no
+instance identifiers remain. What you still see are placeholders —
+`PASTE_SPREADSHEET_ID_HERE` in `Workflow Config`, `owner@example.com` in
+`Operator email`, `demo-*` account IDs and `*@example.*` addresses in the
+committed fixture — none of them resolve anywhere.
 
 ---
 
