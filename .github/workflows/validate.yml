@@ -1,0 +1,48 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate n8n workflow JSON files
+        run: |
+          found=0
+          while IFS= read -r -d '' f; do
+            found=1
+            echo "Checking $f"
+            jq empty "$f"
+            # n8n exports must have a nodes array
+            jq -e '.nodes | type == "array"' "$f" > /dev/null
+          done < <(find n8n -name 'workflow.json' -print0)
+          [ "$found" -eq 0 ] && echo "No n8n workflows yet — skipping."
+
+      - name: Scan for committed secrets
+        run: |
+          if grep -rInE '(xoxb-[0-9A-Za-z-]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
+            --exclude-dir=.git --exclude='.env.example' .; then
+            echo "::error::Possible secret committed to the repo"
+            exit 1
+          fi
+          echo "No secrets found."
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Python (only if sources exist)
+        run: |
+          if find python -name '*.py' | grep -q .; then
+            pipx run ruff check python/
+          else
+            echo "No Python sources yet — skipping."
+          fi
