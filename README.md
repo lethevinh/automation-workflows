@@ -4,7 +4,8 @@
 > approvals where money or reputation is at stake, deterministic core logic,
 > and failure handling designed in rather than bolted on.
 >
-> **Open for automation projects → [Get in touch](#hire-me)**
+> **Open for automation projects → [Get in touch](#hire-me)** ·
+> 🌐 [Portfolio site](https://lethevinh.github.io/automation-workflows/)
 
 ---
 
