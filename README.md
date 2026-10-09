@@ -107,20 +107,13 @@ results & impact → sanitization notes.
 
 ## Hire me
 
-I'm **Le The Vinh** — I design and build automation systems for small
+I'm **Vinh Le** — I design and build automation systems for small
 businesses and solo founders who are drowning in manual work.
 
-<!-- owner-input: replace the four placeholder links below with the real
-     Upwork / LinkedIn / email / website URLs — the only remaining blocker
-     before publishing (CI allowlists exactly these four tokens). -->
-
-- Upwork: [your-upwork-profile]
-- LinkedIn: [your-linkedin]
-- Email: [your-email]
-- Website: [your-site]
-
-*Direct links are being wired up — in the meantime you can reach me via
-[GitHub](https://github.com/lethevinh).*
+- LinkedIn: [linkedin.com/in/lethevinh](https://www.linkedin.com/in/lethevinh)
+- GitHub: [github.com/lethevinh](https://github.com/lethevinh)
+- Email: [lethevinh.qng@gmail.com](mailto:lethevinh.qng@gmail.com)
+- Portfolio: [lethevinh.github.io/automation-workflows](https://lethevinh.github.io/automation-workflows/)
 
 The fastest way to start: send me 2–3 sentences about the process that's
 eating your time. I'll reply with what I'd automate and roughly how.
