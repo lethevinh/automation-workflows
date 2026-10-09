@@ -1308,3 +1308,130 @@ HARD RULES
 - If you cannot mirror crg's Code node faithfully from the repo, STOP and report
   instead of inventing an alert format.
 ```
+
+---
+
+## PROMPT SITE — hero copy + professionalism pass *(copy + claim verification)*
+
+**Wave 5 · write scope:** `docs/index.html`, `README.md`,
+`docs/portfolio-upgrade-plan.md`, and `n8n/README.md` **only under step 6's
+condition**.
+
+```
+TASK: Two things: (1) fix the hero copy so it cannot be contradicted by the
+repo, and (2) run a professionalism pass over the landing page + repo front
+page — verifying every claim against the repository instead of trusting copy.
+
+VERIFIED CONTEXT (2026-10-09)
+- docs/index.html:35-42 is the hero. The H1 STAYS exactly as it is.
+- Defect A: the H1 and the <meta name="description"> dismiss "zaps" while the
+  hero sub lists Zapier as a supported tool — a self-contradiction a buyer feels
+  even when they cannot name it.
+- Defect B: "Tool-agnostic — n8n, Make, Zapier, or custom code" implies repo
+  artifacts that do not exist. `git ls-files zapier/ python/ ai-agents/ skills/`
+  returns only a README.md in each, and there is NO make/ folder at all. The
+  repo's entire pitch is evidence, so this is its one falsifiable sentence.
+- README.md:3-5 carries the same paragraph in a safer form (quoted
+  "connect App A to App B" zaps). The two must agree after this change.
+- TRUE numbers (straight from workflow.json — use these or nothing):
+    client-report-generator  87 nodes · retry 15/15 · error lane YES
+    promise-ledger           60 nodes · retry 19/19 · error lane YES
+    faq-chatbot              44 nodes · retry 14/14 · error lane YES
+    daily-cash-tally         20 nodes · retry  9/9 · error lane NO
+    affiliate-intake         13 nodes · retry n/a (no external calls)
+- The page's cards already carry correct node/retry numbers EXCEPT
+  daily-cash-tally, which shows no retry line although it is 9/9.
+
+STEPS
+1. Replace the hero sub in docs/index.html (lines ~36-42) with EXACTLY this text,
+   keeping the existing classes and the <b> tags shown:
+     Human-in-the-loop approvals where money or reputation is at stake,
+     deterministic core logic, and failure handling <b>designed in</b> rather
+     than bolted on. The repo runs on n8n with custom code where a native node
+     isn't enough — Make, Zapier or another stack when a client's setup
+     genuinely calls for it, including the jobs that really are one simple zap.
+     Every workflow below is a real, documented system — import it, press
+     <b>Test</b>, and watch it route every branch with zero credentials.
+   Do NOT change the H1.
+2. Replace <meta name="description"> (line 7) with:
+     Automation systems, not one-off zaps — human-in-the-loop approvals,
+     deterministic core logic, failure handling designed in. Five documented
+     n8n workflows with zero-credential demo lanes.
+   Then make og:title / og:description consistent with the new hero (align the
+   wording; do not paste the same sentence three times).
+3. Mirror the same paragraph into README.md's tagline block (lines 3-5),
+   keeping the quoted "connect App A to App B" form of zaps there.
+4. Add the missing evidence line to the daily-cash-tally card in docs/index.html,
+   in the same format as the other cards:
+     retryOnFail 9/9 credentialed nodes
+5. PROFESSIONALISM PASS on docs/index.html — only what the repo can support:
+   a. Verify EVERY factual claim against the repo: node counts, retry ratios,
+      "pilot" results, branch counts, service lists, "five workflows". Anything
+      you cannot trace to a file or a workflow.json value → correct it to the
+      true value or delete it. Never invent a replacement.
+   b. Check every link resolves: local anchors (#s1..#s6), the five workflow
+      links, contact links, the portfolio-site URL, font/style references.
+   c. Head completeness: <title>, meta description, og:title, og:description,
+      og:type, og:url, twitter:card. Add og:url (the GitHub Pages URL) and
+      twitter:card. Wire og:image ONLY if a real 1200x630 raster already exists
+      in the repo — otherwise skip it and report it as a follow-up. Never point
+      a tag at a file that does not exist.
+   d. Consistency + accessibility: exactly one <h1> (already true), logical
+      heading order, alt text on any <img>, lang attribute, no leftover
+      placeholder text, the display name used consistently ("Vinh Le").
+   e. Do NOT restyle — follow docs/visual-style.md ("Paper"). Do NOT add
+      testimonials, client names, logos, awards, percentages, or "as seen in".
+   f. Do NOT add any tool or platform to the copy that has no artifact in the
+      repo (that is exactly Defect B).
+6. CONDITIONAL — only if the dispatch message states that these workflows have
+   NOT run in production: replace the unverifiable "Production-ready" wording in
+   n8n/README.md (line 3 plus the four index rows) with "Pilot-verified". If the
+   dispatch does not say that, leave it untouched and report it as an open owner
+   decision (docs/portfolio-upgrade-plan.md §6 still lists it).
+7. Record the work: append a bullet to docs/portfolio-upgrade-plan.md
+   §11 Decision log — hero copy professionalized, claims narrowed to what the
+   repo can prove, og:image status, and the Production-ready wording status
+   (changed or still pending owner confirmation).
+
+VERIFY (paste output):
+  python3 - <<'EOF'
+  from html.parser import HTMLParser
+  class P(HTMLParser):
+      def __init__(self): super().__init__(); self.stack=[]; self.bad=[]
+      VOID={'meta','link','br','hr','img','input','source'}
+      def handle_starttag(self,t,a):
+          if t not in self.VOID: self.stack.append(t)
+      def handle_endtag(self,t):
+          if self.stack and self.stack[-1]==t: self.stack.pop()
+          else: self.bad.append((t,list(self.stack[-3:])))
+  p=P(); p.feed(open('docs/index.html').read())
+  print('unclosed:',p.stack,'mismatched:',p.bad)
+  EOF
+
+  python3 - <<'EOF'
+  import re,os,pathlib
+  root=pathlib.Path('.')
+  html=(root/'docs/index.html').read_text()
+  ids=set(re.findall(r'id="([^"]+)"',html))
+  bad=[]
+  for href in re.findall(r'href="([^"]+)"',html):
+      if href.startswith(('http','mailto:','#')):
+          if href.startswith('#') and href[1:] and href[1:] not in ids:
+              bad.append(('anchor',href))
+          continue
+      target=(root/'docs'/href.split('#')[0]).resolve()
+      if not target.exists(): bad.append(('file',href))
+  print('broken links:',bad)
+  EOF
+
+  grep -n 'Make\|Zapier' docs/index.html       # every mention must read as client work, not repo artifacts
+  grep -c 'Production-ready' n8n/README.md     # expected 5 if untouched, 0 if step 6 applied
+  git diff --stat
+
+HARD RULES
+- Do not touch any workflow.json, scripts/, or examples/.
+- Do not invent facts, clients, numbers, screenshots, or logos.
+- No git commit, no git push.
+- If a claim can neither be verified nor safely narrowed, STOP and report it
+  instead of guessing.
+```

@@ -1,8 +1,11 @@
 # Automation Workflows — n8n, Zapier, Python & AI Agents
 
-> Automation systems, not "connect App A to App B" zaps — human-in-the-loop
-> approvals where money or reputation is at stake, deterministic core logic,
-> and failure handling designed in rather than bolted on.
+> Automation systems — human-in-the-loop approvals where money or
+> reputation is at stake, deterministic core logic, and failure handling
+> designed in rather than bolted on. The repo runs on n8n with custom code
+> where a native node isn't enough — Make, Zapier or another stack when a
+> client's setup genuinely calls for it, including the jobs that really
+> are one simple "connect App A to App B" zap.
 >
 > **Open for automation projects → [Get in touch](#hire-me)** ·
 > 🌐 [Portfolio site](https://lethevinh.github.io/automation-workflows/)

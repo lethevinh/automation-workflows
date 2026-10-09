@@ -521,7 +521,9 @@ coverage, diagram/README/demo-lane availability.
   (`docs/workflow-template.md` mentions the marker only as guidance for future
   workflows, so it is not one of the 12) — the four
   `[your-...]` CTA links
-  in `README.md`, P3b repo metadata approval, P4 client context, P6
+  in `README.md` — RESOLVED 2026-10-09 (real LinkedIn/GitHub/email/portfolio
+  links wired; display name shortened to "Vinh Le"; Upwork omitted until a
+  profile exists) — plus P3b repo metadata approval, P4 client context, P6
   assets, P7 distribution go-ahead.
 - **P0c:** APPROVED by owner 2026-10-09 and implemented — option (a)
   error-alert lanes added to faq-chatbot (+4 nodes: sticky, Error Trigger,
@@ -530,3 +532,16 @@ coverage, diagram/README/demo-lane availability.
   carry `settings.errorWorkflow`). daily-cash-tally stays option (c);
   affiliate-intake unchanged (zero-credential positioning). Appendix A
   counts updated.
+- **Landing page (docs/index.html):** live on GitHub Pages at
+  `lethevinh.github.io/automation-workflows` (Pages source: `main` /
+  `/docs`). "Field Drawing" design system — engineering-sheet frame,
+  title block, node-card workflow grid, BOM services table. Hero copy
+  professionalized 2026-10-09: removed the self-contradiction of
+  dismissing "zaps" while listing Zapier; narrowed the tool claim to what
+  the repo proves (n8n artifacts today; Make/Zapier framed as client-side
+  work, not repo artifacts). Added og:url + twitter:card; og:image skipped
+  — no 1200x630 raster exists in the repo yet (follow-up under P6). All
+  node/retry counts re-verified against workflow.json; daily-cash-tally
+  card gained its missing `retryOnFail 9/9` line. "Production-ready"
+  wording in n8n/README.md left untouched — owner decision still pending
+  on whether the workflows have run in production (see §6).

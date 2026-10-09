@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vinh Le — Automation Systems (n8n)</title>
-<meta name="description" content="Automation systems, not zaps — human-in-the-loop approvals, deterministic core logic, and failure handling designed in. Five documented n8n workflows with zero-credential demo lanes.">
+<meta name="description" content="Automation systems, not one-off zaps — human-in-the-loop approvals, deterministic core logic, failure handling designed in. Five documented n8n workflows with zero-credential demo lanes.">
 <meta property="og:title" content="Vinh Le — Automation Systems">
-<meta property="og:description" content="Five documented n8n automation systems — architecture diagrams, honest reliability docs, zero-credential demo lanes. Open for automation projects.">
+<meta property="og:description" content="Five documented n8n automation systems, built to run at 3am — architecture diagrams, honest reliability docs, zero-credential demo lanes. Open for automation projects.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://lethevinh.github.io/automation-workflows/">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Newsreader:ital,wght@0,400;0,480;0,560;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
@@ -35,11 +37,12 @@
       <h1>Automation systems, <span class="annot">not zaps</span>.</h1>
       <p class="sub">
         Human-in-the-loop approvals where money or reputation is at stake,
-        deterministic core logic, and failure handling <b>designed in</b>
-        rather than bolted on. Tool-agnostic — <b>n8n, Make, Zapier, or
-        custom code, whichever fits the job</b>. Every workflow below is a
-        real, documented system — import it, press <b>Test</b>, and watch
-        it route every branch with zero credentials.
+        deterministic core logic, and failure handling <b>designed in</b> rather
+        than bolted on. The repo runs on n8n with custom code where a native node
+        isn't enough — Make, Zapier or another stack when a client's setup
+        genuinely calls for it, including the jobs that really are one simple zap.
+        Every workflow below is a real, documented system — import it, press
+        <b>Test</b>, and watch it route every branch with zero credentials.
       </p>
       <div class="cover-cta">
         <a class="btn pencil" href="#s6">FREE AUTOMATION AUDIT ↓</a>
@@ -129,7 +132,7 @@
               <li>Quarantine lane isolates suspicious counts</li>
             </ul>
           </div>
-          <div class="testrow"><b>PASS</b> — demo exercises all 5 branch routes: quarantine, escalation, gap alert</div>
+          <div class="testrow"><b>PASS</b> — demo exercises all 5 branch routes: quarantine, escalation, gap alert · retryOnFail 9/9 credentialed nodes</div>
           <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/daily-cash-tally">OPEN →</a><span class="tag">SHEETS · GMAIL · TELEGRAM</span></div>
         </article>
 
@@ -166,7 +169,7 @@
           <div class="figcap">FIG. 1 — 87-node assembly. Config sheet drives sources, sinks, thresholds; red lanes are human approval / exception paths.</div>
         </div>
         <div class="notes">
-          <h4>Field notes</h4>
+          <h3>Field notes</h3>
           <p>Weekly per-client marketing reports, end to end: three data sources behind one adapter contract, deterministic deltas, a human review seam, an idempotent send ledger.</p>
           <ul>
             <li>AI writes prose around a finished table — it can never invent a number</li>
@@ -246,11 +249,11 @@
         <span class="note">5 STATIONS</span>
       </div>
       <div class="chain">
-        <div class="st"><div class="n">ST-1</div><h4>Discovery</h4><p>Map your process, find the automation boundary.</p></div>
-        <div class="st"><div class="n">ST-2</div><h4>Spec</h4><p>You approve a written spec before anything is built.</p></div>
-        <div class="st"><div class="n">ST-3</div><h4>Build</h4><p>Workflow + error handling + docs, shared workspace.</p></div>
-        <div class="st"><div class="n">ST-4</div><h4>Verify</h4><p>Tested on sample data, then a real pilot run.</p></div>
-        <div class="st"><div class="n">ST-5</div><h4>Handoff</h4><p>You own everything — workflows, docs, credentials.</p></div>
+        <div class="st"><div class="n">ST-1</div><h3>Discovery</h3><p>Map your process, find the automation boundary.</p></div>
+        <div class="st"><div class="n">ST-2</div><h3>Spec</h3><p>You approve a written spec before anything is built.</p></div>
+        <div class="st"><div class="n">ST-3</div><h3>Build</h3><p>Workflow + error handling + docs, shared workspace.</p></div>
+        <div class="st"><div class="n">ST-4</div><h3>Verify</h3><p>Tested on sample data, then a real pilot run.</p></div>
+        <div class="st"><div class="n">ST-5</div><h3>Handoff</h3><p>You own everything — workflows, docs, credentials.</p></div>
       </div>
     </div>
   </section>
