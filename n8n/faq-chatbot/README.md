@@ -48,6 +48,9 @@ flowchart TB
     n30[("Write Leads tab")]
     n31[("Write FAQ-Pending tab")]
     n32["Print sheet id + next step"]
+    n33(["On workflow error"])
+    n34["Format error alert"]
+    n35["Email owner: faq-chatbot error"]
     n0 --> n1
     n1 --> n2
     n2 --> n11
@@ -87,6 +90,8 @@ flowchart TB
     n29 --> n32
     n30 --> n32
     n31 --> n32
+    n33 --> n34
+    n34 --> n35
     classDef trigger fill:#EFF6FF,stroke:#3B82F6,color:#0F172A
     classDef logic fill:#ECFDF5,stroke:#10B981,color:#0F172A
     classDef decide fill:#FFFBEB,stroke:#F59E0B,color:#0F172A
@@ -95,12 +100,12 @@ flowchart TB
     classDef external fill:#F8FAFC,stroke:#64748B,color:#0F172A
     classDef gate fill:#FEF2F2,stroke:#EF4444,color:#0F172A
     classDef disabled opacity:.55,stroke-dasharray:4 3
-    class n0,n5,n19 trigger
-    class n1,n2,n3,n4,n7,n8,n10,n12,n16,n17,n18,n21,n26,n32 logic
+    class n0,n5,n19,n33 trigger
+    class n1,n2,n3,n4,n7,n8,n10,n12,n16,n17,n18,n21,n26,n32,n34 logic
     class n11,n13,n27 decide
     class n6,n14,n20,n24,n25,n28,n29,n30,n31 store
     class n9,n22 ai
-    class n15,n23 external
+    class n15,n23,n35 external
 ```
 <!-- mermaid:end -->
 
@@ -246,13 +251,17 @@ Mechanisms that exist in `workflow.json`, by node name:
 
 Stated plainly — what is **not** here:
 
-- **Retries on every live call.** All 13 credentialed nodes ship with
+- **Retries on every live call.** All 14 credentialed nodes ship with
   `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 1500` — a transient
   Sheets/Gmail/OpenAI failure is retried automatically. Retries absorb
   transient failures only; a persistent failure still fails the item.
-- **No error workflow.** There is no Error Trigger and no alert path for
-  workflow-level failures (`settings.errorWorkflow` is not wired); runtime
-  failures are visible in n8n's execution list.
+- **Error-alert lane included — wire once.** The export ships an
+  `On workflow error` → `Format error alert` → `Email owner: faq-chatbot
+  error` lane that formats every unhandled failure into an owner email.
+  It is **inert until wired**: the lane only fires when this workflow is
+  selected as the Error Workflow in n8n's Workflow Settings —
+  `settings.errorWorkflow` is not carried by the export. Until then,
+  runtime failures are visible in n8n's execution list.
 
 ## Results & impact
 
@@ -264,7 +273,8 @@ credentials:
 | Owner digest per demo run | exactly 1 item — PASS |
 | Visitor turns processed | 6 happy-path items across every route — PASS |
 | Edge branches | empty-message, duplicate and bad-AI branches verified — PASS |
-| Retry coverage | 13/13 credentialed nodes (`retryOnFail`, `maxTries: 3`) — `workflow.json` |
+| Retry coverage | 14/14 credentialed nodes (`retryOnFail`, `maxTries: 3`) — `workflow.json` |
+| Error lane | `On workflow error` → `Format error alert` → `Email owner: faq-chatbot error` — needs Error Workflow wiring — `workflow.json` |
 
 **Business outcomes** — to be supplied by the owner:
 

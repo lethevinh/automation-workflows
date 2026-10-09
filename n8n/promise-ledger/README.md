@@ -64,6 +64,9 @@ flowchart TB
     n46[("Write Commitments tab")]
     n47[("Write Chase-Queue tab")]
     n48["Print sheet id + next step"]
+    n49(["On workflow error"])
+    n50["Format error alert"]
+    n51["Email owner: promise-ledger error"]
     n0 --> n1
     n1 --> n2
     n2 --> n11
@@ -118,6 +121,8 @@ flowchart TB
     n45 --> n47
     n46 --> n48
     n47 --> n48
+    n49 --> n50
+    n50 --> n51
     classDef trigger fill:#EFF6FF,stroke:#3B82F6,color:#0F172A
     classDef logic fill:#ECFDF5,stroke:#10B981,color:#0F172A
     classDef decide fill:#FFFBEB,stroke:#F59E0B,color:#0F172A
@@ -126,12 +131,12 @@ flowchart TB
     classDef external fill:#F8FAFC,stroke:#64748B,color:#0F172A
     classDef gate fill:#FEF2F2,stroke:#EF4444,color:#0F172A
     classDef disabled opacity:.55,stroke-dasharray:4 3
-    class n0,n4 trigger
-    class n1,n2,n3,n5,n8,n10,n12,n17,n21,n23,n27,n28,n32,n33,n35,n42,n44,n45,n48 logic
+    class n0,n4,n49 trigger
+    class n1,n2,n3,n5,n8,n10,n12,n17,n21,n23,n27,n28,n32,n33,n35,n42,n44,n45,n48,n50 logic
     class n6,n11,n13,n14,n18,n22,n24,n29,n31,n43 decide
     class n15,n16,n19,n26,n36,n38,n40,n41,n46,n47 store
     class n9,n34 ai
-    class n7,n20,n25,n30,n37,n39 external
+    class n7,n20,n25,n30,n37,n39,n51 external
 ```
 <!-- mermaid:end -->
 
@@ -216,7 +221,7 @@ newsletters skipped, fulfillment replies close the right ledger row.
 
 ## Reliability & error handling
 
-- **Retries on every external call:** all 18 credentialed nodes — every
+- **Retries on every external call:** all 19 credentialed nodes — every
   Google Sheets (×10), Gmail (×6) and OpenAI (×2) node — ship with
   `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 1500`.
 - **Live vs demo isolation:** three `$json.live` IF gates — `Live write?`,
@@ -256,7 +261,12 @@ newsletters skipped, fulfillment replies close the right ledger row.
   `Sweep digest` each aggregate a single summary per run, and
   `Digest worth sending?` skips the morning email entirely when nothing
   is due, overdue, escalated or flagged.
-- **No error workflow:** this export contains no Error Trigger node —
+- **Error-alert lane included — wire once.** The export ships an
+  `On workflow error` → `Format error alert` → `Email owner:
+  promise-ledger error` lane that formats every unhandled failure into an
+  owner email. It is **inert until wired**: the lane only fires when this
+  workflow is selected as the Error Workflow in n8n's Workflow Settings —
+  `settings.errorWorkflow` is not carried by the export. Until then,
   unhandled failures surface in n8n's execution list.
 
 ## Results & impact
@@ -268,7 +278,8 @@ newsletters skipped, fulfillment replies close the right ledger row.
 | Zero-credential container pilot: digest exactly 1 item, happy path 5 items | `## Verification` |
 | Missing-data / duplicate / failure alerts: 3/3 PASS | `## Verification` |
 | Live OpenAI extraction verified against a real key — relative due dates resolved, newsletters skipped, fulfillment replies close the right row | `## Verification` |
-| Retry coverage: 18/18 credentialed nodes (`retryOnFail`, `maxTries: 3`) | `workflow.json` |
+| Retry coverage: 19/19 credentialed nodes (`retryOnFail`, `maxTries: 3`) | `workflow.json` |
+| Error lane: `On workflow error` → `Format error alert` → `Email owner: promise-ledger error` (needs Error Workflow wiring) | `workflow.json` |
 | Live/demo isolation: 3 `$json.live` gates; demo lane reaches 0 credentialed nodes | `workflow.json` |
 
 ### Business outcome

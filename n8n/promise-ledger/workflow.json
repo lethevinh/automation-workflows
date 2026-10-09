@@ -1513,6 +1513,72 @@
         2672
       ],
       "notes": "Output shows the new spreadsheet_id — paste it into the Workflow Config node."
+    },
+    {
+      "id": "sticky-error",
+      "name": "sticky-error",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        2900
+      ],
+      "parameters": {
+        "content": "### Error lane — instance-level catch-all\n\nThis workflow carries an `Error Trigger` entry point: point **Settings → Error workflow** of this workflow (or any sibling) at it, and every unhandled failure is formatted and emailed to the owner. The owner address is a literal in `Format error alert` — Workflow Config never runs inside an error-triggered execution.\n\n**Inert until wired:** exports cannot carry `settings.errorWorkflow`, so attach it once after import.\n\n**Contract** — side_effects: one Gmail send per failed execution. rollback: detach the error workflow in Settings.",
+        "height": 200,
+        "width": 560,
+        "color": 7
+      }
+    },
+    {
+      "id": "681f4b6e-a96e-47de-95ac-1d78e62c4e3c",
+      "name": "On workflow error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        3040
+      ],
+      "parameters": {},
+      "notes": "Attach this workflow as the error workflow (Settings → Error workflow) so any unhandled failure emails the owner."
+    },
+    {
+      "id": "de78f2c5-934c-41e7-9c44-c210273c9c4e",
+      "name": "Format error alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        3040
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Error Trigger payload -> one alert email body for the owner. Runs only\n// inside an error-triggered execution. The trigger item carries the real\n// error context; the owner address is a literal because Workflow Config\n// never runs inside an error-triggered execution.\nconst trigger = $input.first().json;\nconst e = trigger.execution || {};\nconst w = trigger.workflow || {};\nconst err = (e.error && e.error.message) || 'workflow error';\nconst node = (e.error && e.error.lastNodeExecuted) || 'unknown';\nconst to = 'owner@example.com';\nreturn [{ json: {\n  to,\n  subject: `Workflow failed: ${w.name || 'promise-ledger'}`,\n  body: `Execution ${e.id || '?'} failed at node ${node}: ${err}\\nExecution: ${e.url || 'n/a'}`,\n} }];\n"
+      },
+      "notes": "One item per failed execution — names the workflow, node and execution link."
+    },
+    {
+      "id": "852a05f2-af0f-4839-a48c-d48768d566f1",
+      "name": "Email owner: promise-ledger error",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        360,
+        3040
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "notes": "Only fires inside an error-triggered execution — never in the demo lane."
     }
   ],
   "connections": {
@@ -2046,6 +2112,28 @@
         [
           {
             "node": "Print sheet id + next step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On workflow error": {
+      "main": [
+        [
+          {
+            "node": "Format error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error alert": {
+      "main": [
+        [
+          {
+            "node": "Email owner: promise-ledger error",
             "type": "main",
             "index": 0
           }

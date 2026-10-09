@@ -58,8 +58,8 @@ CREDENTIALED_TYPES = {
 EXPECTED = {
     "affiliate-intake":        {"nodes": 13, "connections": 24},
     "daily-cash-tally":        {"nodes": 20, "connections": 45},
-    "faq-chatbot":             {"nodes": 40, "connections": 117},
-    "promise-ledger":          {"nodes": 56, "connections": 162},
+    "faq-chatbot":             {"nodes": 44, "connections": 123},
+    "promise-ledger":          {"nodes": 60, "connections": 168},
     "client-report-generator": {"nodes": 87, "connections": 312},
 }
 
