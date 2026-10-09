@@ -221,3 +221,15 @@ the strongest argument for a last-resort alarm.**
    (0/9) and `faq-chatbot` (0/13) is still awaiting approval. Confirm
    this memo's recommendations independent of that decision (retries mute
    transient noise; they never alert on persistent failure).
+
+---
+
+## Decision (owner, 2026-10-09)
+
+Option (a) **implemented** for `faq-chatbot` and `promise-ledger`: each
+export now carries a `On workflow error` → `Format error alert` →
+`Email owner: <slug> error` lane (mirroring client-report-generator),
+inert until the workflow is selected as an Error Workflow in n8n Settings.
+`daily-cash-tally` stays option (c) — its existing quarantine/escalation
+story is strong enough. `affiliate-intake` is unchanged — any alert node
+would be its first credential and break the zero-credential positioning.

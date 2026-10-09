@@ -635,6 +635,11 @@ rewrites history. Do not commit.
 
 ## PROMPT P0c — Error-alert coverage decision memo *(OWNER DECISION, run after P0)*
 
+> **DONE and superseded.** The memo was produced at `docs/error-handling-decision.md`.
+> The owner approved option (a) for faq-chatbot + promise-ledger; the
+> implementation prompt is `PROMPT P0c — error-alert lanes` at the end of this
+> file. Do not re-run this memo prompt.
+
 ```
 TASK: Write docs/error-handling-decision.md — a short decision memo, not code.
 Do NOT modify any workflow.json.
@@ -1161,4 +1166,145 @@ REPORT
     retain dangling objects and cached views (Support request to purge);
     recommend rotating the n8n instance identity
   - an explicit statement of whether Step 6 ran
+```
+
+---
+
+## PROMPT G — GitHub repo metadata *(owner-approved values; writes nothing in the repo)*
+
+**Wave 5 · write scope: none in the repo** (runs `gh` only) — parallel-safe.
+
+```
+TASK: Align the public GitHub repo metadata with the project's positioning.
+This changes repository settings only; it writes NOTHING inside the repo, so it
+is safe to run in parallel with other work.
+
+OWNER-APPROVED VALUES — use verbatim
+description (one line):
+  Production-shaped n8n automation systems — human-in-the-loop approvals, idempotent ledgers, retry and quarantine lanes. Each ships an architecture diagram and a zero-credential demo lane you can run on import. Open for automation projects.
+topics to ADD: human-in-the-loop, error-handling, idempotency
+topics to KEEP — remove NONE of the existing eleven: ai-agents, automation,
+  freelance, integration, make-com, n8n, n8n-workflows, portfolio, python,
+  workflow-automation, zapier
+homepage: leave unset — blocked until the owner supplies the real site URL.
+social preview image: CANNOT be set via gh or the API. Do not attempt; note it
+  in the report as a manual web-UI step.
+
+WHY: the current description says "n8n templates", contradicting the chosen
+positioning (production systems, not template dumps).
+
+STEPS
+1. Capture current values first, for rollback:
+     gh repo view lethevinh/automation-workflows \
+       --json description,homepageUrl,repositoryTopics | tee /tmp/repo-meta-before.json
+2. Apply (description must be a single line; if the shell mangles the em dash
+   or length, write it to /tmp/desc.txt and use "$(cat /tmp/desc.txt)"):
+     gh repo edit lethevinh/automation-workflows \
+       --description "Production-shaped n8n automation systems — human-in-the-loop approvals, idempotent ledgers, retry and quarantine lanes. Each ships an architecture diagram and a zero-credential demo lane you can run on import. Open for automation projects." \
+       --add-topic human-in-the-loop --add-topic error-handling --add-topic idempotency
+3. Verify:
+     gh repo view lethevinh/automation-workflows \
+       --json description,repositoryTopics,homepageUrl
+     curl -s https://api.github.com/repos/lethevinh/automation-workflows \
+       | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['description']);print(len(d['topics']),sorted(d['topics']))"
+   Expect: 14 topics (11 kept + 3 added), the new description, homepage null.
+
+ROLLBACK (reference only)
+     gh repo edit lethevinh/automation-workflows \
+       --description "<old description from /tmp/repo-meta-before.json>" \
+       --remove-topic human-in-the-loop --remove-topic error-handling --remove-topic idempotency
+
+REPORT: before/after values verbatim, the exact command you ran, and the note
+that the social preview image still needs the web UI.
+```
+
+---
+
+## PROMPT P0c — error-alert lanes for faq-chatbot + promise-ledger *(owner-approved)*
+
+**Wave 5 · write scope:** `n8n/faq-chatbot/workflow.json`,
+`n8n/faq-chatbot/README.md`, `n8n/promise-ledger/workflow.json`,
+`n8n/promise-ledger/README.md`, `scripts/verify-demo-lane.py`,
+`docs/portfolio-upgrade-plan.md`, `docs/error-handling-decision.md`,
+`n8n/README.md`
+
+```
+TASK: Ship real error-alert lanes for faq-chatbot and promise-ledger — option
+(a) from docs/error-handling-decision.md, approved by the owner 2026-10-09.
+
+VERIFIED FACTS
+- Only client-report-generator has an error lane today. Mirror it EXACTLY:
+    On workflow error            n8n-nodes-base.errorTrigger
+    Format error alert           n8n-nodes-base.code
+    Email owner: workflow error  n8n-nodes-base.gmail
+  All three are ENABLED in crg. They are not reachable from the demo trigger,
+  which is why they do not break crg's zero-credential demo lane.
+- Targets: faq-chatbot (40 nodes / 117 connections / 13 credentialed) and
+  promise-ledger (56 nodes / 162 connections / 18 credentialed). Both already
+  contain Gmail nodes, so no new credential TYPE is introduced.
+- scripts/verify-demo-lane.py pins node and connection counts in an EXPECTED
+  table — adding nodes requires updating it (step 5).
+- The demo-lane verifier starts only from enabled manual triggers, so an Error
+  Trigger lane is automatically outside the demo lane. You must still prove it
+  (step 4).
+
+STEPS
+1. Read crg's `On workflow error`, `Format error alert`,
+   `Email owner: workflow error` and its `sticky-error` note: exact typeVersion,
+   positions, parameters, and the Code node body.
+2. For EACH target workflow, add the same three nodes, adapted:
+   - names: `On workflow error`, `Format error alert`, `Email owner: <slug> error`
+   - the Gmail node reuses that workflow's existing owner-email placeholder
+     convention (do not invent a new address)
+   - wire errorTrigger -> code -> gmail
+   - position them clear of existing nodes; add a sticky note in the style of
+     that workflow's existing notes, explaining the lane and the wiring step
+3. ADDITIVE ONLY. Do not modify, rename, rewire or delete any existing node,
+   connection or parameter in the two files.
+4. Prove the demo lane is still credential-free:
+     python3 scripts/verify-demo-lane.py
+   Expect 5/5 PASS and `credentialed-reached 0` everywhere.
+   If a target reports credentialed nodes reached, set the new Gmail alert node
+   to `"disabled": true` and state that in the README reliability text.
+5. Update the two pinned rows in scripts/verify-demo-lane.py's EXPECTED table.
+   Recompute from the edited JSON:
+     python3 -c "import json;d=json.load(open('n8n/faq-chatbot/workflow.json'));print(len(d['nodes']), sum(len(o or []) for v in d['connections'].values() for s in v.get('main',[]) for o in s))"
+   (repeat for promise-ledger). Change nothing else in that script.
+6. Regenerate the mermaid node graphs, or the CI drift check fails:
+     python3 scripts/render-mermaid.py n8n/faq-chatbot n8n/promise-ledger
+7. README truth-up — these two claims become FALSE and must be rewritten:
+   - n8n/faq-chatbot/README.md: "**No error workflow.** There is no Error
+     Trigger and no alert path for workflow-level failures
+     (`settings.errorWorkflow` is not wired); runtime failures are visible in
+     n8n's execution list."
+   - n8n/promise-ledger/README.md: "**No error workflow:** this export contains
+     no Error Trigger node — unhandled failures surface in n8n's execution list."
+   New text must state (a) the lane now exists, naming the three nodes, and
+   (b) the wiring requirement: it only fires when this workflow is selected as
+   the Error Workflow in n8n's Workflow Settings — `settings.errorWorkflow` is
+   still absent from the export, the same caveat client-report-generator
+   documents. Never imply it fires out of the box.
+   Add a row to each README's evidence table, e.g.
+   | Error lane: Error Trigger -> Code -> Gmail alert (needs Error Workflow wiring) | `workflow.json` |
+8. Update docs:
+   - docs/portfolio-upgrade-plan.md — Appendix A node/connection counts for
+     both workflows; §11 Decision log (P0c approved and implemented); change the
+     "P0c — Error-alert coverage" section status to implemented.
+   - docs/error-handling-decision.md — append a short
+     "Decision (owner, 2026-10-09)" section: option (a) implemented for
+     faq-chatbot and promise-ledger; daily-cash-tally stays option (c);
+     affiliate-intake unchanged (zero-credential positioning).
+   - n8n/README.md — confirm the index still matches reality (a Gmail alert node
+     does not change the credential type).
+9. VERIFY and paste output:
+     bash scripts/verify-all.sh              # must end: all checks passed
+     python3 scripts/verify-demo-lane.py     # 5/5 PASS, 0 credentialed reached
+     git diff --stat
+
+HARD RULES
+- Two workflow.json files are additive-only. Nothing else may change in them.
+- Do NOT touch affiliate-intake or daily-cash-tally.
+- Do NOT run git commit, git push, or gh repo edit.
+- If you cannot mirror crg's Code node faithfully from the repo, STOP and report
+  instead of inventing an alert format.
 ```

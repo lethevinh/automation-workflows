@@ -261,7 +261,7 @@ still credential-free; mermaid graph unchanged (no nodes added).
 > the word is not absence of handling.
 > Anything that adds nodes is a separate decision → **P0c**.
 
-### P0c — Error-alert coverage (proposal, owner decision) *(owner-gated)*
+### P0c — Error-alert coverage *(implemented 2026-10-09 — option (a) for faq-chatbot and promise-ledger)*
 
 **Question:** should the workflows other than `client-report-generator` get
 a real error-alert path? Three options, no recommendation to rush:
@@ -393,7 +393,7 @@ the owner can see what converts.
 | Real metrics per workflow (even rough) | P0 Results & impact, P4 | P0 final, P4 |
 | Contact links (Upwork, LinkedIn, email, site) | Root README CTA | P3 |
 | Approve P0b retry change to `workflow.json`? | Reliability parity | P0b |
-| P0c: add error-alert paths to the other four workflows, or document the gap? | Reliability story | P0c (after P0) |
+| ~~P0c: add error-alert paths to the other four workflows, or document the gap?~~ — DECIDED 2026-10-09: option (a) implemented for faq-chatbot + promise-ledger | Reliability story | — done |
 | Confirm "Production-ready" (n8n/README.md) and "ran in production" phrasing are accurate — the exports read as demo/practice builds in places | Credibility | P0, P-1b |
 | n8n instance access for screenshots | P6 | P6 |
 | Client context that may be mentioned (anonymized ok) | P4 | P4 |
@@ -481,12 +481,12 @@ figures instead of estimating.
 
 | | affiliate-intake | daily-cash-tally | faq-chatbot | promise-ledger | client-report-generator |
 |---|---|---|---|---|---|
-| Nodes | 13 | 20 | 40 | 56 | 87 |
-| Triggers | Manual | Manual, Schedule 21:30 | Manual, Chat, Schedule (weekly) | Manual, Schedule (hourly) | Manual, Schedule (Mon 09:00), Error, SETUP manual |
-| Credentialed nodes | 0 | 9 | 13 | 18 | 15 |
-| Services in JSON | — | Sheets ×4, Gmail ×1, Telegram ×2, OpenAI ×2 | Sheets ×9, Gmail ×2, OpenAI ×2, Chat Trigger | Sheets ×10, Gmail ×6, OpenAI ×2 | Sheets ×6, Gmail ×4, HTTP ×4, OpenAI ×1 |
-| `retryOnFail` nodes | 0 (n/a) | **0 / 9** | **0 / 13** | 18 / 18 | 15 / 15 |
-| Error workflow node | none | none | none | none | **`On workflow error`** — inert until wired via n8n Error Workflow settings |
+| Nodes | 13 | 20 | 44 | 60 | 87 |
+| Triggers | Manual | Manual, Schedule 21:30 | Manual, Chat, Schedule (weekly), Error | Manual, Schedule (hourly), Error | Manual, Schedule (Mon 09:00), Error, SETUP manual |
+| Credentialed nodes | 0 | 9 | 14 | 19 | 15 |
+| Services in JSON | — | Sheets ×4, Gmail ×1, Telegram ×2, OpenAI ×2 | Sheets ×9, Gmail ×3, OpenAI ×2, Chat Trigger | Sheets ×10, Gmail ×7, OpenAI ×2 | Sheets ×6, Gmail ×4, HTTP ×4, OpenAI ×1 |
+| `retryOnFail` nodes | 0 (n/a) | 9 / 9 | 14 / 14 | 19 / 19 | 15 / 15 |
+| Error workflow node | none | none | **`On workflow error`** lane — inert until wired | **`On workflow error`** lane — inert until wired | **`On workflow error`** — inert until wired via n8n Error Workflow settings |
 | Demo isolation | no live nodes at all | 9 × `disabled: true` | `$json.live` gate | `$json.live` gates ×3 | `$json.live` gates ×10 |
 | Demo lane, 0 credentials | ✅ | ✅ | ✅ | ✅ | ✅ |
 | SETUP.md | — | — | ✅ | ✅ | ✅ |
@@ -521,5 +521,12 @@ coverage, diagram/README/demo-lane availability.
   (`docs/workflow-template.md` mentions the marker only as guidance for future
   workflows, so it is not one of the 12) — the four
   `[your-...]` CTA links
-  in `README.md`, P0c lane approvals, P3b repo metadata approval, P4 client
-  context, P6 assets, P7 distribution go-ahead.
+  in `README.md`, P3b repo metadata approval, P4 client context, P6
+  assets, P7 distribution go-ahead.
+- **P0c:** APPROVED by owner 2026-10-09 and implemented — option (a)
+  error-alert lanes added to faq-chatbot (+4 nodes: sticky, Error Trigger,
+  Code, Gmail) and promise-ledger (+4 nodes), mirroring crg's lane. Lanes
+  are inert until wired via Settings → Error workflow (exports cannot
+  carry `settings.errorWorkflow`). daily-cash-tally stays option (c);
+  affiliate-intake unchanged (zero-credential positioning). Appendix A
+  counts updated.

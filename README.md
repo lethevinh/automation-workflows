@@ -29,7 +29,7 @@ you hire me.
 | Workflow | Platform | Use case | Highlights | Result (repo-verified) |
 |---|---|---|---|---|
 | [Client Report Generator](n8n/client-report-generator/) | n8n | Weekly per-client marketing reports | Meta Ads + Google Ads + GA4, config-sheet driven, branded HTML, draft-review mode | Pilot run: 16 report items, exactly 1 digest, alerts 3/3 — PASS · `retryOnFail` on 15/15 credentialed nodes |
-| [Promise Ledger](n8n/promise-ledger/) | n8n | Track promises made to you in email | AI extraction, chase drafts with approval gate, fulfillment detection | Pilot run: 5-item happy path, alerts 3/3 — PASS · `retryOnFail` on 18/18 credentialed nodes |
+| [Promise Ledger](n8n/promise-ledger/) | n8n | Track promises made to you in email | AI extraction, chase drafts with approval gate, fulfillment detection | Pilot run: 5-item happy path, alerts 3/3 — PASS · `retryOnFail` on 19/19 credentialed nodes |
 | [FAQ Chatbot](n8n/faq-chatbot/) | n8n | Support chatbot that grows its own FAQ | Learns from misses — only with owner approval; lead capture | Pilot run: 6 visitor turns routed, digest exactly 1, 3/3 edge branches — PASS |
 | [Daily Cash Tally](n8n/daily-cash-tally/) | n8n | End-of-day till reconciliation | 30-day history scoring, repeat-offender escalation, quarantine lane | Demo run exercises all 5 branch routes — quarantine, escalation and gap alert included |
 | [Affiliate Intake](n8n/affiliate-intake/) | n8n | Screen affiliate applications | Editable rules, outreach drafts, zero-credential demo | Demo run: 6 applications → 2 qualified drafts + 4 reason-coded alerts, exactly 1 digest |
