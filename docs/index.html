@@ -9,240 +9,328 @@
 <meta property="og:description" content="Five documented n8n automation systems — architecture diagrams, honest reliability docs, zero-credential demo lanes. Open for automation projects.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Newsreader:ital,wght@0,400;0,480;0,560;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
 
-<nav>
-  <div class="wrap">
-    <a class="brand" href="#">lethevinh<span>/automation-workflows</span></a>
-    <ul>
-      <li><a href="#workflows">Workflows</a></li>
-      <li><a href="#case-study">Case study</a></li>
-      <li><a href="#services">Services</a></li>
-      <li><a href="#hire">Hire me</a></li>
-    </ul>
-  </div>
-</nav>
+<div class="sheet">
 
-<header class="hero">
-  <div class="wrap">
-    <div class="kicker">Automation portfolio — open for projects</div>
-    <h1>Automation systems, <em>not</em> "connect App A to App B" zaps.</h1>
-    <p class="sub">
-      Human-in-the-loop approvals where money or reputation is at stake,
-      deterministic core logic, and failure handling designed in rather than
-      bolted on. Every workflow below is a real, documented system you can
-      import and run — no credentials needed to see it work.
-    </p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="#workflows">See the workflows</a>
-      <a class="btn btn-ghost" href="https://github.com/lethevinh/automation-workflows">View on GitHub →</a>
-    </div>
-    <div class="hero-meta">
-      <span><b>5</b> documented n8n systems</span>
-      <span><b>0</b> credentials needed for demo lanes</span>
-      <span><b>CI-verified</b> sanitization &amp; drift checks</span>
-      <span><b>MIT</b> licensed</span>
-    </div>
+  <div class="topbar">
+    <span class="dwg">DWG A-101 — AUTOMATION PORTFOLIO</span>
+    <nav>
+      <a href="#s1">S-01 WORKFLOWS</a>
+      <a href="#s2">S-02 CASE STUDY</a>
+      <a href="#s3">S-03 WHO</a>
+      <a href="#s4">S-04 LEGEND</a>
+      <a href="#s5">S-05 SERVICES</a>
+      <a href="#s6">S-06 AUDIT</a>
+    </nav>
   </div>
-</header>
 
-<section id="workflows">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="kicker">Featured workflows</div>
-      <h2>Production-shaped, not toy demos</h2>
-      <p>
-        Each ships with a problem statement, architecture diagram, setup path,
-        input contract, and a demo lane that exercises every branch —
-        verified in CI on every commit.
+  <!-- ============ COVER ============ -->
+  <header class="cover">
+    <div class="wrap">
+      <div class="rev">Sheet 1 of 1 · rev c · 2026-10 · open for projects</div>
+      <h1>Automation systems, <span class="annot">not zaps</span>.</h1>
+      <p class="sub">
+        Human-in-the-loop approvals where money or reputation is at stake,
+        deterministic core logic, and failure handling <b>designed in</b>
+        rather than bolted on. Tool-agnostic — <b>n8n, Make, Zapier, or
+        custom code, whichever fits the job</b>. Every workflow below is a
+        real, documented system — import it, press <b>Test</b>, and watch
+        it route every branch with zero credentials.
       </p>
-    </div>
-
-    <div class="cards">
-      <div class="card">
-        <div class="slug">n8n/client-report-generator · 87 nodes</div>
-        <h3>Client Report Generator</h3>
-        <div class="usecase">Weekly per-client marketing reports</div>
-        <ul>
-          <li>Meta Ads + Google Ads + GA4 behind one adapter contract</li>
-          <li>Config-sheet driven — new client = one spreadsheet row</li>
-          <li>Draft-review mode: Gmail draft instead of auto-send</li>
-        </ul>
-        <div class="result"><b>PASS</b> — pilot: 16 report items, exactly 1 digest, alerts 3/3 · retryOnFail on 15/15 credentialed nodes</div>
-        <a class="cardlink" href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/client-report-generator">Open workflow →</a>
+      <div class="cover-cta">
+        <a class="btn pencil" href="#s6">FREE AUTOMATION AUDIT ↓</a>
+        <a class="btn solid" href="#s1">READ THE DRAWINGS ↓</a>
+        <a class="btn" href="https://github.com/lethevinh/automation-workflows">GITHUB REPO ↗</a>
       </div>
-
-      <div class="card">
-        <div class="slug">n8n/promise-ledger · 60 nodes</div>
-        <h3>Promise Ledger</h3>
-        <div class="usecase">Track promises made to you in email</div>
-        <ul>
-          <li>AI extraction of commitments from inbound mail</li>
-          <li>Chase drafts held behind an approval gate</li>
-          <li>Fulfillment detection closes the loop</li>
-        </ul>
-        <div class="result"><b>PASS</b> — pilot: 5-item happy path, alerts 3/3 · retryOnFail on 19/19 credentialed nodes · error-alert lane included</div>
-        <a class="cardlink" href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/promise-ledger">Open workflow →</a>
-      </div>
-
-      <div class="card">
-        <div class="slug">n8n/faq-chatbot · 44 nodes</div>
-        <h3>FAQ Chatbot</h3>
-        <div class="usecase">Support chatbot that grows its own FAQ</div>
-        <ul>
-          <li>Learns from misses — only with owner approval</li>
-          <li>Lead capture built into the conversation flow</li>
-          <li>Error-alert lane wired for workflow-level failures</li>
-        </ul>
-        <div class="result"><b>PASS</b> — pilot: 6 visitor turns routed, digest exactly 1, 3/3 edge branches · retryOnFail on 14/14 credentialed nodes</div>
-        <a class="cardlink" href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/faq-chatbot">Open workflow →</a>
-      </div>
-
-      <div class="card">
-        <div class="slug">n8n/daily-cash-tally · 20 nodes</div>
-        <h3>Daily Cash Tally</h3>
-        <div class="usecase">End-of-day till reconciliation</div>
-        <ul>
-          <li>30-day history scoring per cashier</li>
-          <li>Repeat-offender escalation path</li>
-          <li>Quarantine lane isolates suspicious counts</li>
-        </ul>
-        <div class="result"><b>PASS</b> — demo run exercises all 5 branch routes: quarantine, escalation and gap alert included</div>
-        <a class="cardlink" href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/daily-cash-tally">Open workflow →</a>
-      </div>
-
-      <div class="card">
-        <div class="slug">n8n/affiliate-intake · 13 nodes</div>
-        <h3>Affiliate Intake</h3>
-        <div class="usecase">Screen affiliate applications</div>
-        <ul>
-          <li>Editable scoring rules — no code changes</li>
-          <li>Outreach drafts for qualified applicants</li>
-          <li>Fully credential-free — import and run</li>
-        </ul>
-        <div class="result"><b>PASS</b> — demo: 6 applications → 2 qualified drafts + 4 reason-coded alerts, exactly 1 digest</div>
-        <a class="cardlink" href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/affiliate-intake">Open workflow →</a>
+      <div class="specstrip">
+        <div><div class="v">5</div><div class="k">n8n systems</div></div>
+        <div><div class="v">224</div><div class="k">nodes total</div></div>
+        <div><div class="v">0</div><div class="k">creds to demo</div></div>
+        <div><div class="v">CI</div><div class="k">checked every push</div></div>
+        <div><div class="v">MIT</div><div class="k">license</div></div>
       </div>
     </div>
-  </div>
-</section>
+  </header>
 
-<section id="case-study">
-  <div class="wrap">
-    <div class="feature">
-      <div>
-        <div class="kicker">Flagship case study</div>
-        <h3>Client Report Generator</h3>
+  <!-- ============ S-01 WORKFLOWS ============ -->
+  <section id="s1">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-01</span>
+        <h2>Featured workflows</h2>
+        <span class="note">SCALE — 1 NODE : 1 NODE</span>
+      </div>
+      <p class="lede">
+        Each ships with a problem statement, architecture diagram, setup
+        path, input contract, and a demo lane exercised by CI on every
+        commit. Not toy demos — the same structure delivered on paid work.
+      </p>
+
+      <div class="busline"></div>
+      <div class="nodes" style="margin-top:26px">
+
+        <article class="nodecard">
+          <div class="head"><span class="ty">WF</span> n8n/client-report-generator <span class="ncount">87 nodes</span></div>
+          <div class="body">
+            <h3>Client Report Generator</h3>
+            <div class="use">Weekly per-client marketing reports</div>
+            <ul>
+              <li>Meta Ads + Google Ads + GA4 behind one adapter contract</li>
+              <li>Config-sheet driven — new client = one spreadsheet row</li>
+              <li>Draft-review mode: Gmail draft instead of auto-send</li>
+            </ul>
+          </div>
+          <div class="testrow"><b>PASS</b> — pilot: 16 report items, exactly 1 digest, alerts 3/3 · retryOnFail 15/15 credentialed nodes</div>
+          <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/client-report-generator">OPEN →</a><span class="tag">FLAGSHIP</span></div>
+        </article>
+
+        <article class="nodecard">
+          <div class="head"><span class="ty">WF</span> n8n/promise-ledger <span class="ncount">60 nodes</span></div>
+          <div class="body">
+            <h3>Promise Ledger</h3>
+            <div class="use">Track promises made to you in email</div>
+            <ul>
+              <li>AI extraction of commitments from inbound mail</li>
+              <li>Chase drafts held behind an approval gate</li>
+              <li>Fulfillment detection closes the loop</li>
+            </ul>
+          </div>
+          <div class="testrow"><b>PASS</b> — pilot: 5-item happy path, alerts 3/3 · retryOnFail 19/19 · error-alert lane included</div>
+          <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/promise-ledger">OPEN →</a><span class="tag">GMAIL · SHEETS · OPENAI</span></div>
+        </article>
+
+        <article class="nodecard">
+          <div class="head"><span class="ty">WF</span> n8n/faq-chatbot <span class="ncount">44 nodes</span></div>
+          <div class="body">
+            <h3>FAQ Chatbot</h3>
+            <div class="use">Support chatbot that grows its own FAQ</div>
+            <ul>
+              <li>Learns from misses — only with owner approval</li>
+              <li>Lead capture built into the conversation flow</li>
+              <li>Error-alert lane wired for workflow-level failures</li>
+            </ul>
+          </div>
+          <div class="testrow"><b>PASS</b> — pilot: 6 visitor turns routed, digest exactly 1, 3/3 edge branches · retryOnFail 14/14</div>
+          <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/faq-chatbot">OPEN →</a><span class="tag">CHAT · SHEETS · OPENAI</span></div>
+        </article>
+
+        <article class="nodecard">
+          <div class="head"><span class="ty">WF</span> n8n/daily-cash-tally <span class="ncount">20 nodes</span></div>
+          <div class="body">
+            <h3>Daily Cash Tally</h3>
+            <div class="use">End-of-day till reconciliation</div>
+            <ul>
+              <li>30-day history scoring per cashier</li>
+              <li>Repeat-offender escalation path</li>
+              <li>Quarantine lane isolates suspicious counts</li>
+            </ul>
+          </div>
+          <div class="testrow"><b>PASS</b> — demo exercises all 5 branch routes: quarantine, escalation, gap alert</div>
+          <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/daily-cash-tally">OPEN →</a><span class="tag">SHEETS · GMAIL · TELEGRAM</span></div>
+        </article>
+
+        <article class="nodecard">
+          <div class="head"><span class="ty">WF</span> n8n/affiliate-intake <span class="ncount">13 nodes</span></div>
+          <div class="body">
+            <h3>Affiliate Intake</h3>
+            <div class="use">Screen affiliate applications</div>
+            <ul>
+              <li>Editable scoring rules — no code changes</li>
+              <li>Outreach drafts for qualified applicants</li>
+              <li>Fully credential-free — import and run</li>
+            </ul>
+          </div>
+          <div class="testrow"><b>PASS</b> — demo: 6 applications → 2 qualified drafts + 4 reason-coded alerts, exactly 1 digest</div>
+          <div class="foot"><a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/affiliate-intake">OPEN →</a><span class="tag">ZERO CREDENTIALS</span></div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S-02 CASE STUDY ============ -->
+  <section id="s2">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-02</span>
+        <h2>Flagship detail — Client Report Generator</h2>
+        <span class="note">FIG. 1 · ASSEMBLY</span>
+      </div>
+      <div class="figure">
+        <div class="imgbox">
+          <img src="https://raw.githubusercontent.com/lethevinh/automation-workflows/main/n8n/client-report-generator/assets/diagram.svg" alt="Client Report Generator architecture diagram" loading="lazy">
+          <div class="figcap">FIG. 1 — 87-node assembly. Config sheet drives sources, sinks, thresholds; red lanes are human approval / exception paths.</div>
+        </div>
+        <div class="notes">
+          <h4>Field notes</h4>
+          <p>Weekly per-client marketing reports, end to end: three data sources behind one adapter contract, deterministic deltas, a human review seam, an idempotent send ledger.</p>
+          <ul>
+            <li>AI writes prose around a finished table — it can never invent a number</li>
+            <li>Ledger keyed on client + ISO week — no double-sends on re-runs</li>
+            <li>One bad API doesn't kill the batch — failures route to a composed alert</li>
+            <li>Error lane armed via Error Workflow settings — documented, not implied</li>
+          </ul>
+          <p style="margin-top:16px"><a href="https://github.com/lethevinh/automation-workflows/blob/main/docs/case-studies/client-report-generator.md">FULL CASE STUDY →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S-03 WHO I HELP ============ -->
+  <section id="s3">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-03</span>
+        <h2>Who this is for</h2>
+        <span class="note">4 PROFILES</span>
+      </div>
+      <p class="lede">
+        Different businesses, same disease — repetitive work silently
+        eating hours. Each profile maps to a working system in the repo.
+      </p>
+      <div class="whos">
+        <div class="who">
+          <div class="for">Agencies &amp; service firms</div>
+          <h3>Client work that scales without headcount</h3>
+          <div class="pain">Weekly client reports, onboarding checklists, approval chasing — multiplied by every retainer you sign.</div>
+          <div class="fit"><span class="lbl">SHIPS AS ›</span> <a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/client-report-generator">client-report-generator</a> — config-sheet driven, draft-review mode</div>
+        </div>
+        <div class="who">
+          <div class="for">Solo founders &amp; small teams</div>
+          <h3>An ops layer you don't have to hire for</h3>
+          <div class="pain">Leads going cold in the inbox, follow-ups you meant to send, promises you forgot were made to you.</div>
+          <div class="fit"><span class="lbl">SHIPS AS ›</span> <a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/promise-ledger">promise-ledger</a> + <a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/faq-chatbot">faq-chatbot</a> — with approval gates</div>
+        </div>
+        <div class="who">
+          <div class="for">Retail &amp; hospitality</div>
+          <h3>Cash and shift operations that self-check</h3>
+          <div class="pain">End-of-day tallies, drawer discrepancies, repeat-offender patterns nobody has time to cross-reference.</div>
+          <div class="fit"><span class="lbl">SHIPS AS ›</span> <a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/daily-cash-tally">daily-cash-tally</a> — 30-day scoring, quarantine lane</div>
+        </div>
+        <div class="who">
+          <div class="for">Partner &amp; creator programs</div>
+          <h3>Intake that filters before you read</h3>
+          <div class="pain">Affiliate and partner applications piling up — most unqualified, all needing a polite, timely answer.</div>
+          <div class="fit"><span class="lbl">SHIPS AS ›</span> <a href="https://github.com/lethevinh/automation-workflows/tree/main/n8n/affiliate-intake">affiliate-intake</a> — editable rules, zero credentials</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S-04 LEGEND + PROCESS ============ -->
+  <section id="s4">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-04</span>
+        <h2>Legend — how to read the work</h2>
+        <span class="note">REF: PAPER PALETTE</span>
+      </div>
+      <table class="legend">
+        <caption>Engineering habits on display — every row is visible in the repo, not a claim.</caption>
+        <tr><th style="width:36px"></th><th style="width:220px">Marking</th><th>Meaning</th></tr>
+        <tr><td><span class="sw gate"></span></td><td class="sym">gate / approval</td><td>Human-in-the-loop approval gates where money or reputation is at stake</td></tr>
+        <tr><td><span class="sw logic"></span></td><td class="sym">retryOnFail · maxTries 3</td><td>Retry/backoff on every credentialed node — transient failures absorbed</td></tr>
+        <tr><td><span class="sw logic"></span></td><td class="sym">appendOrUpdate · dedupe</td><td>Idempotent writes — re-runs are safe by construction</td></tr>
+        <tr><td><span class="sw store"></span></td><td class="sym">quarantine lane</td><td>Suspicious records isolated instead of dropped or passed through</td></tr>
+        <tr><td><span class="sw ai"></span></td><td class="sym">ai at the edge</td><td>Deterministic core, LLM at the edges — it drafts, it never decides</td></tr>
+        <tr><td><span class="sw trigger"></span></td><td class="sym">demo lane</td><td>Zero-credential test path — import, press Test, watch every branch</td></tr>
+      </table>
+
+      <div class="callout" style="margin-top:64px">
+        <span class="no">S-04a</span>
+        <h2>Process</h2>
+        <span class="note">5 STATIONS</span>
+      </div>
+      <div class="chain">
+        <div class="st"><div class="n">ST-1</div><h4>Discovery</h4><p>Map your process, find the automation boundary.</p></div>
+        <div class="st"><div class="n">ST-2</div><h4>Spec</h4><p>You approve a written spec before anything is built.</p></div>
+        <div class="st"><div class="n">ST-3</div><h4>Build</h4><p>Workflow + error handling + docs, shared workspace.</p></div>
+        <div class="st"><div class="n">ST-4</div><h4>Verify</h4><p>Tested on sample data, then a real pilot run.</p></div>
+        <div class="st"><div class="n">ST-5</div><h4>Handoff</h4><p>You own everything — workflows, docs, credentials.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S-05 SERVICES ============ -->
+  <section id="s5">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-05</span>
+        <h2>Bill of materials — services</h2>
+        <span class="note">QTY AS REQUIRED</span>
+      </div>
+      <table class="bom">
+        <tr><th style="width:56px">Item</th><th style="width:220px">Part</th><th>Specification</th><th style="width:110px">Qty</th></tr>
+        <tr><td class="item">BOM-00</td><td class="part">Automation audit</td><td class="desc">Send the task eating your week — get a written teardown naming what to automate first, with rough effort on each. See S-06.</td><td class="qty">free</td></tr>
+        <tr><td class="item">BOM-01</td><td class="part">Workflow setup</td><td class="desc">Design, build, and deploy your workflow — n8n, Make, Zapier, or custom code; cloud or self-hosted.</td><td class="qty">per workflow</td></tr>
+        <tr><td class="item">BOM-02</td><td class="part">n8n self-hosting</td><td class="desc">Docker/VPS deployment, queue mode, backups, monitoring.</td><td class="qty">per instance</td></tr>
+        <tr><td class="item">BOM-03</td><td class="part">Workflow audit &amp; rescue</td><td class="desc">Fix brittle or broken workflows; add error handling and retries.</td><td class="qty">per audit</td></tr>
+        <tr><td class="item">BOM-04</td><td class="part">Document processing</td><td class="desc">OCR + LLM extraction on invoices, POs, intake forms — structured into your systems, low-confidence routed to a human.</td><td class="qty">per pipeline</td></tr>
+        <tr><td class="item">BOM-05</td><td class="part">Custom integrations</td><td class="desc">Connect APIs that have no native nodes — Python/JS custom nodes.</td><td class="qty">per connector</td></tr>
+        <tr><td class="item">BOM-06</td><td class="part">AI agent pipelines</td><td class="desc">LLM-powered classification, drafting, enrichment inside your stack. AI drafts — it never decides alone.</td><td class="qty">per pipeline</td></tr>
+        <tr><td class="item">BOM-07</td><td class="part">Ongoing maintenance</td><td class="desc">Monitoring, alerting, versioned updates.</td><td class="qty">per month</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ S-06 AUDIT / CONTACT ============ -->
+  <section id="s6">
+    <div class="wrap">
+      <div class="callout">
+        <span class="no">S-06</span>
+        <h2>Free automation audit</h2>
+        <span class="note">ISSUED FOR HIRE</span>
+      </div>
+      <div class="hirebox">
+        <div class="stamp">Open for work</div>
+        <h2>Tell me the task that eats your week.</h2>
         <p>
-          Weekly per-client marketing reports, automated end to end: three
-          ad/data sources behind one adapter contract, deterministic deltas,
-          a human review seam, and an idempotent send ledger.
+          I'm <b>Le The Vinh</b> — I design and build automation systems for
+          small businesses, agencies, and solo founders. Send me 2–3
+          sentences about the process draining your time and the tools you
+          run on. You get back a <b>written teardown naming what I'd
+          automate first</b>, in order, with rough effort on each — free,
+          by message, no call to sit through. If the honest answer is that
+          a task shouldn't be automated, the audit says so.
         </p>
-        <ul>
-          <li>Deterministic core, AI at the edge — the model writes prose around a finished table, never invents a number</li>
-          <li>Idempotent delivery ledger — same client, same week, no double-send</li>
-          <li>Per-source failure isolation — one bad API doesn't kill the batch</li>
-          <li>Error lane honestly labelled — armed via n8n Error Workflow settings, documented not implied</li>
-        </ul>
-        <div class="stat-row">
-          <div class="stat"><div class="n">87</div><div class="l">nodes</div></div>
-          <div class="stat"><div class="n">3+1</div><div class="l">data sources + dock</div></div>
-          <div class="stat"><div class="n">15/15</div><div class="l">retry coverage</div></div>
-          <div class="stat"><div class="n">0</div><div class="l">credentials to demo</div></div>
+        <div class="cover-cta">
+          <a class="btn pencil" href="https://github.com/lethevinh">REQUEST THE AUDIT — GITHUB ↗</a>
+          <a class="btn" href="https://github.com/lethevinh/automation-workflows">BROWSE THE REPO ↗</a>
         </div>
-        <div class="cta-row">
-          <a class="btn btn-ghost" href="https://github.com/lethevinh/automation-workflows/blob/main/docs/case-studies/client-report-generator.md">Read the case study →</a>
+        <!-- owner-input: real client quote goes here once available —
+             do not publish invented testimonials -->
+        <div class="quoteframe">
+          <span class="qk">Client note — slot reserved</span>
+          <p>"— the first project review goes here, verbatim, with the client's name and company."</p>
+          <div class="whois">— pending first engagement · this space stays empty until the words are real</div>
+        </div>
+        <!-- owner-input: replace with real links when available —
+             Upwork / LinkedIn / Email / Website (see README "Hire me") -->
+        <div class="hire-links">
+          <a href="https://github.com/lethevinh">github.com/lethevinh</a>
+          <span class="dim">upwork / linkedin / email — links being wired up</span>
         </div>
       </div>
-      <div>
-        <img src="https://raw.githubusercontent.com/lethevinh/automation-workflows/main/n8n/client-report-generator/assets/diagram.svg" alt="Client Report Generator architecture diagram" loading="lazy">
+    </div>
+  </section>
+
+  <!-- ============ TITLE BLOCK ============ -->
+  <footer>
+    <div class="wrap">
+      <div class="titleblock">
+        <div><div class="k">Drawn by</div><div class="v"><a href="https://github.com/lethevinh">LE THE VINH</a></div></div>
+        <div><div class="k">Dwg no.</div><div class="v">A-101</div></div>
+        <div><div class="k">Rev</div><div class="v">C — 2026-10</div></div>
+        <div><div class="k">License</div><div class="v"><a href="https://github.com/lethevinh/automation-workflows/blob/main/LICENSE">MIT</a></div></div>
       </div>
+      <div class="sheet-foot">DO NOT SCALE DRAWING · ALL FACTS REPO-VERIFIED · SHEET 1 OF 1</div>
     </div>
-  </div>
-</section>
+  </footer>
 
-<section id="how">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="kicker">What's actually in the box</div>
-      <h2>Engineering habits, visible</h2>
-    </div>
-    <div class="chips">
-      <span class="chip c-gate">human-in-the-loop approval gates</span>
-      <span class="chip c-logic">idempotent writes — dedupe keys, appendOrUpdate</span>
-      <span class="chip c-logic">retryOnFail + maxTries: 3 backoff</span>
-      <span class="chip c-store">quarantine lanes</span>
-      <span class="chip c-logic">per-source failure isolation</span>
-      <span class="chip c-ai">AI at the edge, deterministic core</span>
-      <span class="chip c-trigger">zero-credential demo lanes</span>
-      <span class="chip c-store">CI-checked sanitization</span>
-    </div>
-
-    <div class="section-head" style="margin-top:64px">
-      <div class="kicker">How I work</div>
-      <h2>No black boxes. No lock-in.</h2>
-    </div>
-    <div class="steps">
-      <div class="step"><h4>Discovery</h4><p>Map your process, find the automation boundary.</p></div>
-      <div class="step"><h4>Spec</h4><p>You approve a written spec before I build anything.</p></div>
-      <div class="step"><h4>Build</h4><p>Workflow + error handling + docs, in a shared workspace.</p></div>
-      <div class="step"><h4>Verify</h4><p>Tested against sample data, then a real pilot run.</p></div>
-      <div class="step"><h4>Handoff</h4><p>You own everything: workflows, docs, credentials.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="services">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="kicker">Services</div>
-      <h2>What I can build for you</h2>
-    </div>
-    <div class="services">
-      <div class="service"><h4>n8n workflow setup</h4><p>Design, build, and deploy your workflow — cloud or self-hosted.</p></div>
-      <div class="service"><h4>n8n self-hosting</h4><p>Docker/VPS deployment, queue mode, backups, monitoring.</p></div>
-      <div class="service"><h4>Workflow audit &amp; rescue</h4><p>Fix brittle or broken workflows; add error handling and retries.</p></div>
-      <div class="service"><h4>Custom integrations</h4><p>Connect APIs that have no native nodes — Python/JS custom nodes.</p></div>
-      <div class="service"><h4>AI agent pipelines</h4><p>LLM-powered classification, drafting, enrichment inside your stack.</p></div>
-      <div class="service"><h4>Ongoing maintenance</h4><p>Monitoring, alerting, versioned updates.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="hire">
-  <div class="wrap">
-    <div class="hire">
-      <div class="kicker">Hire me</div>
-      <h2>Drowning in manual work?</h2>
-      <p>
-        I'm Le The Vinh — I design and build automation systems for small
-        businesses and solo founders. The fastest way to start: send me 2–3
-        sentences about the process that's eating your time. I'll reply with
-        what I'd automate and roughly how.
-      </p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="https://github.com/lethevinh">Message me on GitHub</a>
-        <a class="btn btn-ghost" href="https://github.com/lethevinh/automation-workflows">Browse the repo</a>
-      </div>
-      <!-- owner-input: replace with real links when available —
-           Upwork / LinkedIn / Email / Website (see README "Hire me") -->
-      <div class="hire-links">
-        <a href="https://github.com/lethevinh">github.com/lethevinh</a>
-        <span>Upwork · LinkedIn · Email — links being wired up</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <span>© 2026 Le The Vinh · MIT License</span>
-    <span>Built with the same standards as the workflows — <a href="https://github.com/lethevinh/automation-workflows">source</a></span>
-  </div>
-</footer>
-
+</div>
 </body>
 </html>
