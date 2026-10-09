@@ -532,9 +532,11 @@ coverage, diagram/README/demo-lane availability.
   carry `settings.errorWorkflow`). daily-cash-tally stays option (c);
   affiliate-intake unchanged (zero-credential positioning). Appendix A
   counts updated.
-- **Landing page (docs/index.html):** live on GitHub Pages at
-  `lethevinh.github.io/automation-workflows` (Pages source: `main` /
-  `/docs`). "Field Drawing" design system — engineering-sheet frame,
+- **Landing page:** split to dedicated repo `lethevinh.github.io`
+  (user site) on 2026-10-09 — root domain is the durable personal-brand
+  surface; repo docs/index.html is now a redirect stub. Update rule:
+  when a new workflow lands here, add a card + bump spec strip on the
+  site repo (documented in that repo's README). "Field Drawing" design system — engineering-sheet frame,
   title block, node-card workflow grid, BOM services table. Hero copy
   professionalized 2026-10-09: removed the self-contradiction of
   dismissing "zaps" while listing Zapier; narrowed the tool claim to what

@@ -8,7 +8,7 @@
 > are one simple "connect App A to App B" zap.
 >
 > **Open for automation projects → [Get in touch](#hire-me)** ·
-> 🌐 [Portfolio site](https://lethevinh.github.io/automation-workflows/)
+> 🌐 [Portfolio site](https://lethevinh.github.io/)
 
 ---
 
@@ -116,7 +116,7 @@ businesses and solo founders who are drowning in manual work.
 - LinkedIn: [linkedin.com/in/lethevinh](https://www.linkedin.com/in/lethevinh)
 - GitHub: [github.com/lethevinh](https://github.com/lethevinh)
 - Email: [lethevinh.qng@gmail.com](mailto:lethevinh.qng@gmail.com)
-- Portfolio: [lethevinh.github.io/automation-workflows](https://lethevinh.github.io/automation-workflows/)
+- Portfolio: [lethevinh.github.io](https://lethevinh.github.io/)
 
 The fastest way to start: send me 2–3 sentences about the process that's
 eating your time. I'll reply with what I'd automate and roughly how.
