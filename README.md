@@ -1,4 +1,11 @@
+![Automation systems by Vinh Le — n8n, Zapier, Python and AI agents](assets/banner.png)
+
 # Automation Workflows — n8n, Zapier, Python & AI Agents
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![demos: zero-credential](https://img.shields.io/badge/demos-zero--credential-2ea043)
+![platforms: n8n · Zapier · Python · AI agents · Skills](https://img.shields.io/badge/platforms-n8n%20%7C%20Zapier%20%7C%20Python%20%7C%20AI%20agents%20%7C%20Skills-8957e5)
+[![portfolio site](https://img.shields.io/badge/portfolio-lethevinh.github.io-1f6feb)](https://lethevinh.github.io/)
 
 Automation systems — human-in-the-loop approvals where money or reputation is at
 stake, deterministic core logic, and failure handling designed in rather than
@@ -10,11 +17,22 @@ Every pack ships a **zero-credential demo lane** — import and run, or
 `python3 <lane> --demo` — so you can see exactly what it does before a credential
 is involved anywhere.
 
+## Start here
+
+| If you want to… | Go to |
+| :--- | :--- |
+| Browse the whole catalogue | [What's in here](#whats-in-here) — 11 systems, grouped by the problem each fixes |
+| See it with screenshots and case studies | **[lethevinh.github.io](https://lethevinh.github.io/)** |
+| Run one with zero credentials | [Run them yourself](#run-them-yourself) |
+| Learn the design rules behind every pack | [The design rules](#the-design-rules-behind-every-pack) |
+| Hire me for a build | [Hire me](#hire-me) |
+
 ## What's in here
 
-Six artifacts, each solving one concrete, verifiable problem. They are grouped
-below by the buyer problem they fix; every card also carries its platform so you
-can filter by stack.
+Eleven documented automation systems — seven on n8n, plus a Zapier workflow, a
+Python CLI, an AI-agent setup and a Skills pack. The six below are the current
+focus, grouped by the buyer problem they fix; every card also carries its
+platform so you can filter by stack.
 
 ### Your data and money ops eat your day
 
@@ -36,6 +54,19 @@ can filter by stack.
 | Pack | Platform | The problem it fixes | Outcome |
 | :--- | :--- | :--- | :--- |
 | [Automation Audit](skills/automation-audit/) | Skills | "We should automate something" — but which process, in what scope, and at roughly what cost? A paid discovery call you haven't booked yet. | Paste a described business process and get back a scoped spec, an ordered automation list (quickest win first) and a rough effort estimate — deterministic, no model, no key, no network. |
+
+### Five earlier n8n workflows
+
+The first five packs — each still self-contained, with its own architecture
+diagram and node graph:
+
+| Pack | Platform | What it does |
+| :--- | :--- | :--- |
+| [Affiliate Intake](n8n/affiliate-intake/) | n8n | Screens partner applications against your own rules — a qualified applicant gets a personalized outreach draft, the rest a reason-coded alert, and you get exactly one digest per run. |
+| [Client Report Generator](n8n/client-report-generator/) | n8n | Meta Ads + Google Ads + GA4 → week-over-week deltas → an AI-written branded report delivered per client through Gmail and/or Slack, driven entirely from a config sheet. |
+| [Daily Cash Tally](n8n/daily-cash-tally/) | n8n | A till cash-leak monitor: not just "was today short", but the drawer that comes up short *every week* — caught and escalated to a different channel. |
+| [FAQ Chatbot](n8n/faq-chatbot/) | n8n | A public chatbot that answers only from your FAQ — and turns every unanswered question into next week's better FAQ, after you approve it. |
+| [Promise Ledger](n8n/promise-ledger/) | n8n | "I'll send it Friday" stops disappearing: every promise lands in a ledger, drafts its own chase email, and closes itself when the person delivers. |
 
 ## The design rules behind every pack
 
@@ -68,6 +99,7 @@ cd skills/automation-audit && python3 audit_lane.py --self-check
 ```
 
 All four deterministic lanes print `RESULT: PASS` against their bundled fixtures.
+The whole local guardrail suite is one command: `bash scripts/verify-all.sh`.
 
 ---
 
