@@ -7,7 +7,7 @@ drafts prepared. See [§11 Decision log](#11-decision-log).
 **Goal:** turn the repo into a job-winning portfolio for n8n / automation
 contracts (Upwork, direct clients, agency subcontracting).
 
-**Companion file:** [`docs/agent-prompts.md`](agent-prompts.md) — copy-paste
+**Companion file:** [`docs/internal/agent-prompts.md`](agent-prompts.md) — copy-paste
 prompts for the executing agents, one per work package, wave-ordered.
 
 ---
@@ -159,7 +159,7 @@ publish the sanitization sentence.
 
 Ordered by sales impact. P-1/P-1b are blocking. Waves are defined in
 [§8](#8-execution-waves--write-scopes); prompts live in
-[`docs/agent-prompts.md`](agent-prompts.md).
+[`docs/internal/agent-prompts.md`](agent-prompts.md).
 
 ### P-1 — Sanitize exports *(blocking, agent)*
 
@@ -414,7 +414,7 @@ the owner can see what converts.
 8. `docs(case-studies): client report generator deep dive` (P4)
 9. `docs(n8n): add execution screenshots` (P6)
 
-Also commit this plan and `docs/agent-prompts.md` (both currently untracked).
+Also commit this plan and `docs/internal/agent-prompts.md` (both currently untracked).
 
 No `Generated with` trailers, no bot co-author.
 
@@ -514,7 +514,7 @@ coverage, diagram/README/demo-lane availability.
   No new nodes; affiliate-intake untouched (zero-credential positioning).
 - **History rewrite:** option A (rewrite published history) chosen as the
   plan's recommendation; executable runbook in
-  [`docs/history-rewrite-runbook.md`](history-rewrite-runbook.md).
+  [`docs/internal/history-rewrite-runbook.md`](history-rewrite-runbook.md).
   Force-push NOT yet authorised by the owner.
 - **Pending owner input:** 12 `<!-- owner-metric -->` placeholders — 11 across
   the five workflow READMEs plus 1 in the root README

@@ -112,8 +112,8 @@ jobs:
 
           # These two planning docs legitimately discuss placeholders and
           # identifiers.
-          EXCLUDE = {"docs/portfolio-upgrade-plan.md",
-                     "docs/agent-prompts.md"}
+          EXCLUDE = {"docs/internal/portfolio-upgrade-plan.md",
+                     "docs/internal/agent-prompts.md"}
 
           # Owner-pending hire-me CTAs in the root README, to be replaced by
           # P3 once the owner supplies links (plan section 6). Allowlisted so

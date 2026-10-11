@@ -1,7 +1,7 @@
 # Agent prompts — portfolio upgrade
 
 Copy-paste prompts for executing the plan in
-[`docs/portfolio-upgrade-plan.md`](portfolio-upgrade-plan.md). One agent per
+[`docs/internal/portfolio-upgrade-plan.md`](portfolio-upgrade-plan.md). One agent per
 prompt. Respect the wave order in §8 of the plan — wave 0 must land before
 wave 1, wave 1 before wave 2, wave 2 before wave 3.
 
@@ -41,7 +41,7 @@ You are working in the repo /Users/le/Projects/automation-workflows — a public
 portfolio of n8n automation workflows used to win freelance contracts.
 
 Before doing anything:
-1. Read docs/portfolio-upgrade-plan.md in full, especially §3 "Rules of
+1. Read docs/internal/portfolio-upgrade-plan.md in full, especially §3 "Rules of
    engagement" and §8 "Execution waves & write scopes". Treat them as binding.
 2. Read the files in your write scope before editing.
 
@@ -373,7 +373,7 @@ STEPS: extend .github/workflows/validate.yml with jobs that fail on:
    "webhookId"'` finds matches under n8n/, or if a workflow.json has a
    top-level "id" key.
 4. Placeholder scan: fail on `[your-`, "your_chat_id", "TODO" anywhere in
-   *.md outside docs/portfolio-upgrade-plan.md and docs/agent-prompts.md.
+   *.md outside docs/internal/portfolio-upgrade-plan.md and docs/internal/agent-prompts.md.
 5. Fixture shape: every examples/*/test-data.json parses as JSON.
 6. Keep the existing n8n JSON validity, secret scan and ruff steps unchanged.
 7. New scripts/verify-demo-lane.py — the local substitute for an n8n instance
@@ -525,14 +525,14 @@ nodes correctly). Do not "fix" it.
 
 > **Superseded by `PROMPT ALL-IN-ONE` at the end of this file.**
 
-**Wave 2 · write scope:** `docs/portfolio-upgrade-plan.md`,
+**Wave 2 · write scope:** `docs/internal/portfolio-upgrade-plan.md`,
 `.github/workflows/validate.yml`, `scripts/verify-all.sh`
 
 ```
 TASK: Three small hygiene items left over from P-1.
 
 1. The plan doc was leaking the identifier it warns about.
-   docs/portfolio-upgrade-plan.md §4 previously quoted the FULL n8n instanceId
+   docs/internal/portfolio-upgrade-plan.md §4 previously quoted the FULL n8n instanceId
    verbatim. That has already been redacted in the working tree to
    `<redacted>` plus a "do not paste the full value" note. VERIFY this
    (do not re-derive the value, do not type it):
@@ -548,7 +548,7 @@ TASK: Three small hygiene items left over from P-1.
    BOTH .github/workflows/validate.yml and scripts/verify-all.sh.
    Keep the regex itself unchanged.
 
-3. Update the plan's stale status. docs/portfolio-upgrade-plan.md still says
+3. Update the plan's stale status. docs/internal/portfolio-upgrade-plan.md still says
    "Status: ready for owner sign-off — not yet executed", which is now false:
    waves 0-3 have landed. Set an accurate status line and append a short
    "## 11. Decision log" section recording, factually:
@@ -576,10 +576,10 @@ or any file outside the write scope.
 
 > **Superseded by `PROMPT ALL-IN-ONE` at the end of this file.**
 
-**Wave 2 · write scope:** `docs/history-rewrite-runbook.md` (new)
+**Wave 2 · write scope:** `docs/internal/history-rewrite-runbook.md` (new)
 
 ```
-TASK: Write docs/history-rewrite-runbook.md: an executable, owner-reviewable
+TASK: Write docs/internal/history-rewrite-runbook.md: an executable, owner-reviewable
 runbook for removing the leaked n8n instanceId from public git history
 (option A). You may run the DRY-RUN verification steps. You must NOT execute
 the rewrite or the force-push.
@@ -625,7 +625,7 @@ RUNBOOK MUST COVER, in order:
 
 VERIFY (paste output): the dry-run checks you actually ran, and a grep proving
 the new runbook contains no 64-hex identifier:
-  grep -nE '[0-9a-f]{32,}' docs/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
+  grep -nE '[0-9a-f]{32,}' docs/internal/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
 
 DO NOT: run git-filter-repo, git filter-branch, git push, or any command that
 rewrites history. Do not commit.
@@ -749,7 +749,7 @@ result. Do not invent an anecdote, a client name, or a percentage.
 ## PROMPT P6-visual — Screenshot shot list + Loom script *(owner-assisted)*
 
 ```
-TASK: Produce docs/visual-proof-guide.md containing, per workflow:
+TASK: Produce docs/internal/visual-proof-guide.md containing, per workflow:
 1. A shot list: which n8n screen to capture (e.g. a successful Test workflow
    run showing every branch, the quarantine tab, the approval queue), what to
    annotate, and the exact redaction rules — no account IDs, no client emails,
@@ -767,7 +767,7 @@ Keep it executable by a non-technical owner: numbered steps, no jargon.
 ## PROMPT P7-dist — Distribution plan *(owner-gated: publishes publicly)*
 
 ```
-TASK: Produce docs/distribution-plan.md — a ready-to-execute launch plan so
+TASK: Produce docs/internal/distribution-plan.md — a ready-to-execute launch plan so
 the polished repo actually reaches buyers.
 
 Required sections:
@@ -795,7 +795,7 @@ anything — this is copy the owner reviews and sends.
 
 ```
 MISSION
-Finish every remaining executable item of docs/portfolio-upgrade-plan.md in one
+Finish every remaining executable item of docs/internal/portfolio-upgrade-plan.md in one
 sequential run: the approved retry change, the leftover P-1 hygiene, the
 history-rewrite runbook (dry-run only), and the Wave-4 draft documents.
 Owner-only inputs (real metrics, contact links, force-push authorisation) are
@@ -823,12 +823,12 @@ WRITE SCOPE (nothing outside this list)
   n8n/daily-cash-tally/README.md
   n8n/faq-chatbot/workflow.json
   n8n/faq-chatbot/README.md
-  docs/portfolio-upgrade-plan.md
+  docs/internal/portfolio-upgrade-plan.md
   .github/workflows/validate.yml
   scripts/verify-all.sh
-  docs/history-rewrite-runbook.md            (new)
-  docs/visual-proof-guide.md                 (new)
-  docs/distribution-plan.md                  (new)
+  docs/internal/history-rewrite-runbook.md            (new)
+  docs/internal/visual-proof-guide.md                 (new)
+  docs/internal/distribution-plan.md                  (new)
   docs/case-studies/client-report-generator.md (new)
 
 ═══════════════════════════════════════════════════════════════════
@@ -882,7 +882,7 @@ A6. VERIFY and paste output:
 ═══════════════════════════════════════════════════════════════════
 PART B — verify the leaked identifier is gone from the working tree
 ═══════════════════════════════════════════════════════════════════
-B1. §4 of docs/portfolio-upgrade-plan.md used to quote the full 64-hex n8n
+B1. §4 of docs/internal/portfolio-upgrade-plan.md used to quote the full 64-hex n8n
     instanceId. It has already been redacted to `<redacted>` plus a
     "do not paste the full value" note. VERIFY:
         grep -rnE '\b[0-9a-f]{64}\b' docs/ *.md 2>/dev/null || echo "clean"
@@ -905,7 +905,7 @@ C2. VERIFY: grep for the exclusion string in both files; expect no match.
 ═══════════════════════════════════════════════════════════════════
 PART D — plan status + decision log
 ═══════════════════════════════════════════════════════════════════
-D1. docs/portfolio-upgrade-plan.md still says "Status: ready for owner
+D1. docs/internal/portfolio-upgrade-plan.md still says "Status: ready for owner
     sign-off — not yet executed", now false (waves 0-3 landed). Replace with an
     accurate status line, and append a "## 11. Decision log" section recording
     factually:
@@ -920,7 +920,7 @@ D2. Do not restate any identifier value anywhere. Keep the existing §0
 ═══════════════════════════════════════════════════════════════════
 PART E — history-rewrite runbook (DRY RUN ONLY)
 ═══════════════════════════════════════════════════════════════════
-E1. Write docs/history-rewrite-runbook.md: an executable, owner-reviewable
+E1. Write docs/internal/history-rewrite-runbook.md: an executable, owner-reviewable
     runbook for removing the leaked identifier from public git history
     (option A). You may run the read-only verification steps. You must NOT run
     the rewrite or the push.
@@ -958,12 +958,12 @@ E4. Runbook must cover, in order:
          retain dangling objects/cached views (open a Support request to purge);
          assume the value is compromised regardless.
 E5. VERIFY and paste:
-      grep -nE '[0-9a-f]{32,}' docs/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
+      grep -nE '[0-9a-f]{32,}' docs/internal/history-rewrite-runbook.md || echo "runbook: no identifier leaked"
 
 ═══════════════════════════════════════════════════════════════════
 PART F — Wave-4 draft documents (drafts only; publish nothing)
 ═══════════════════════════════════════════════════════════════════
-F1. docs/visual-proof-guide.md — per workflow: which n8n screen to capture
+F1. docs/internal/visual-proof-guide.md — per workflow: which n8n screen to capture
     (a Test run showing every branch, the quarantine tab, the approval queue),
     what to annotate, exact redaction rules (no account IDs, client emails,
     spreadsheet IDs, instance URLs), target filename
@@ -971,7 +971,7 @@ F1. docs/visual-proof-guide.md — per workflow: which n8n screen to capture
     Plus a 2-3 minute Loom script for client-report-generator: import → test
     run → config sheet → draft-review seam → error path. Numbered steps, no
     jargon.
-F2. docs/distribution-plan.md — channels with exact draft copy, target URL,
+F2. docs/internal/distribution-plan.md — channels with exact draft copy, target URL,
     asset to attach, and the owner action for each: n8n community template
     gallery, awesome-n8n PR, Reddit r/n8n, LinkedIn, Upwork portfolio entry,
     one short blog post. UTM-tagged links back to the repo. A 2-week schedule,
@@ -1090,15 +1090,15 @@ STOP if any of 0b–0e fails. Do not continue without backups.
 ═══════════════════ STEP 1 — scrub identifier fragments from published docs ═══
 The fragment is 8 hex + a connector + 6 hex. Locate it WITHOUT typing it:
     grep -rnE '[0-9a-f]{8}.{1,2}[0-9a-f]{6}' --include='*.md' .
-Expect exactly 5 lines in 2 files: docs/portfolio-upgrade-plan.md (1 line) and
-docs/agent-prompts.md (4 lines).
+Expect exactly 5 lines in 2 files: docs/internal/portfolio-upgrade-plan.md (1 line) and
+docs/internal/agent-prompts.md (4 lines).
 Replace every occurrence with `<redacted>`. For the two lines that are grep
 COMMANDS inside the superseded P-1c prompt, rewrite the command to use the
 pattern above instead of a literal.
 Re-run the locator: it must return 0 lines.
 
 ═══════════════════ STEP 2 — commit ═══════════════════════════════════════════
-docs/history-rewrite-runbook.md also carries uncommitted Lead fixes.
+docs/internal/history-rewrite-runbook.md also carries uncommitted Lead fixes.
     git add -A docs/
     git commit -m "docs: correct post-rewrite verification steps; redact identifier fragments"
     git status --short          # expect: empty
@@ -1225,7 +1225,7 @@ that the social preview image still needs the web UI.
 **Wave 5 · write scope:** `n8n/faq-chatbot/workflow.json`,
 `n8n/faq-chatbot/README.md`, `n8n/promise-ledger/workflow.json`,
 `n8n/promise-ledger/README.md`, `scripts/verify-demo-lane.py`,
-`docs/portfolio-upgrade-plan.md`, `docs/error-handling-decision.md`,
+`docs/internal/portfolio-upgrade-plan.md`, `docs/error-handling-decision.md`,
 `n8n/README.md`
 
 ```
@@ -1287,7 +1287,7 @@ STEPS
    Add a row to each README's evidence table, e.g.
    | Error lane: Error Trigger -> Code -> Gmail alert (needs Error Workflow wiring) | `workflow.json` |
 8. Update docs:
-   - docs/portfolio-upgrade-plan.md — Appendix A node/connection counts for
+   - docs/internal/portfolio-upgrade-plan.md — Appendix A node/connection counts for
      both workflows; §11 Decision log (P0c approved and implemented); change the
      "P0c — Error-alert coverage" section status to implemented.
    - docs/error-handling-decision.md — append a short
@@ -1314,7 +1314,7 @@ HARD RULES
 ## PROMPT SITE — hero copy + professionalism pass *(copy + claim verification)*
 
 **Wave 5 · write scope:** `docs/index.html`, `README.md`,
-`docs/portfolio-upgrade-plan.md`, and `n8n/README.md` **only under step 6's
+`docs/internal/portfolio-upgrade-plan.md`, and `n8n/README.md` **only under step 6's
 condition**.
 
 ```
@@ -1387,8 +1387,8 @@ STEPS
    NOT run in production: replace the unverifiable "Production-ready" wording in
    n8n/README.md (line 3 plus the four index rows) with "Pilot-verified". If the
    dispatch does not say that, leave it untouched and report it as an open owner
-   decision (docs/portfolio-upgrade-plan.md §6 still lists it).
-7. Record the work: append a bullet to docs/portfolio-upgrade-plan.md
+   decision (docs/internal/portfolio-upgrade-plan.md §6 still lists it).
+7. Record the work: append a bullet to docs/internal/portfolio-upgrade-plan.md
    §11 Decision log — hero copy professionalized, claims narrowed to what the
    repo can prove, og:image status, and the Production-ready wording status
    (changed or still pending owner confirmation).

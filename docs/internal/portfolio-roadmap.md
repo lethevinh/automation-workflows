@@ -44,7 +44,7 @@ pulled out of the repo and onto the page.
       measure before/after. Yields the first true metric + possible
       first testimonial (slot archived in site README).
 - [ ] **n8n community template post** — copy drafted in
-      `docs/distribution-plan.md`. Level-3 verifiable proof.
+      `docs/internal/distribution-plan.md`. Level-3 verifiable proof.
 - [ ] **Upwork profile** — prerequisite for the platform-specific CTA.
 
 ## Phase 3 — Depth content (months 1–2)

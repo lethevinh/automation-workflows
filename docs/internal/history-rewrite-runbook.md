@@ -12,7 +12,7 @@ plan §4 option A.
 - `c81a929` — pushed to `origin/main`: `meta.instanceId` inside
   `n8n/{affiliate-intake,daily-cash-tally,faq-chatbot,promise-ledger}/workflow.json`
 - `e916120` — **local only** (unpushed): quoted verbatim in
-  `docs/portfolio-upgrade-plan.md` (the working-tree file has since been
+  `docs/internal/portfolio-upgrade-plan.md` (the working-tree file has since been
   redacted; the committed version still embeds it)
 - 12 per-node `webhookId`s were also stripped in the same pass — they are
   rotated on re-export and are not part of this rewrite target. Add them to
