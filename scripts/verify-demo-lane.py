@@ -31,7 +31,7 @@ EXPECTED is pinned from the sanitized tree; node counts are plan
 Appendix A, connection counts measured on the same tree with the P-1
 verify formula (main-connection targets only). Update the table only as
 part of an owner-approved export change (P0b/P0c) — see
-docs/portfolio-upgrade-plan.md.
+docs/internal/portfolio-upgrade-plan.md.
 
 Usage:
     python3 scripts/verify-demo-lane.py [n8n/<slug>/workflow.json ...]
@@ -61,6 +61,8 @@ EXPECTED = {
     "faq-chatbot":             {"nodes": 44, "connections": 123},
     "promise-ledger":          {"nodes": 60, "connections": 168},
     "client-report-generator": {"nodes": 87, "connections": 312},
+    "csv-cleaner":             {"nodes": 13, "connections": 27},
+    "invoice-emailer":         {"nodes": 16, "connections": 27},
 }
 
 
@@ -121,7 +123,7 @@ def demo_lane(workflow):
 
 
 def main_connection_count(workflow):
-    """Same formula as the P-1 verify snippet in docs/agent-prompts.md."""
+    """Same formula as the P-1 verify snippet in docs/internal/agent-prompts.md."""
     return sum(
         len(targets or [])
         for conn in workflow["connections"].values()
