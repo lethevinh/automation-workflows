@@ -1,0 +1,112 @@
+{
+  "fixture_version": 1,
+  "description": "Eight leads for the offline lead-router replay: three hot, one nurture, two cold, one duplicate (same email as L-1001 after normalization) and one missing-email row. Each lead is one simulated Zap run; the replay carries state across the batch so dedupe is observable.",
+  "leads": [
+    {
+      "lead_id": "L-1001",
+      "email": "alice@acme.example",
+      "name": "Alice Nguyen",
+      "company": "Acme Corp",
+      "company_size": 120,
+      "country": "US",
+      "source": "demo_request",
+      "phone": "+1-202-555-0101",
+      "message": "We're comparing CRM tools for a sales team of about forty reps and need a demo next week - can someone walk us through Close's pipeline automation?"
+    },
+    {
+      "lead_id": "L-1002",
+      "email": "bob@globex.example",
+      "name": "Bob Fischer",
+      "company": "Globex",
+      "company_size": 12,
+      "country": "DE",
+      "source": "newsletter",
+      "phone": "",
+      "message": "Please add me to the newsletter."
+    },
+    {
+      "lead_id": "L-1003",
+      "email": "carol@initech.example",
+      "name": "Carol Diaz",
+      "company": "Initech",
+      "company_size": 200,
+      "country": "CA",
+      "source": "pricing_page",
+      "phone": "+1-415-555-0142",
+      "message": "We're comparing CRM tools for a sales team of about forty reps and need a demo next week - can someone walk us through Close's pipeline automation?"
+    },
+    {
+      "lead_id": "L-1004",
+      "email": "  ALICE@Acme.example ",
+      "name": "Alice Nguyen",
+      "company": "Acme Corp",
+      "company_size": 120,
+      "country": "US",
+      "source": "demo_request",
+      "phone": "+1-202-555-0101",
+      "message": "We're comparing CRM tools for a sales team of about forty reps and need a demo next week - can someone walk us through Close's pipeline automation?"
+    },
+    {
+      "lead_id": "L-1005",
+      "email": "",
+      "name": "Dana Whitfield",
+      "company": "Wayne Industries",
+      "company_size": 300,
+      "country": "US",
+      "source": "demo_request",
+      "phone": "+1-212-555-0190",
+      "message": "We're comparing CRM tools for a sales team of about forty reps and need a demo next week - can someone walk us through Close's pipeline automation?"
+    },
+    {
+      "lead_id": "L-1006",
+      "email": "erin@umbrella.example",
+      "name": "Erin Okafor",
+      "company": "Umbrella",
+      "company_size": 60,
+      "country": "GB",
+      "source": "newsletter",
+      "phone": "",
+      "message": "Please add me to the newsletter."
+    },
+    {
+      "lead_id": "L-1007",
+      "email": "frank@hooli.example",
+      "name": "Frank Lee",
+      "company": "Hooli",
+      "company_size": 500,
+      "country": "US",
+      "source": "demo_request",
+      "phone": "+1-650-555-0177",
+      "message": "We're comparing CRM tools for a sales team of about forty reps and need a demo next week - can someone walk us through Close's pipeline automation?"
+    },
+    {
+      "lead_id": "L-1008",
+      "email": "grace@stark.example",
+      "name": "Grace Park",
+      "company": "Stark Industries",
+      "company_size": 8,
+      "country": "FR",
+      "source": "newsletter",
+      "phone": "",
+      "message": "Please add me to the newsletter."
+    }
+  ],
+  "expected": {
+    "L-1001": { "verdict": "crm_upsert_and_draft", "score": 100, "band": "hot" },
+    "L-1002": { "verdict": "log_only", "score": 0, "band": "cold" },
+    "L-1003": { "verdict": "crm_upsert_and_draft", "score": 100, "band": "hot" },
+    "L-1004": { "verdict": "duplicate_skipped", "score": null, "band": null },
+    "L-1005": { "verdict": "missing_data_alert", "score": null, "band": null },
+    "L-1006": { "verdict": "crm_upsert", "score": 45, "band": "nurture" },
+    "L-1007": { "verdict": "crm_upsert_and_draft", "score": 100, "band": "hot" },
+    "L-1008": { "verdict": "log_only", "score": 0, "band": "cold" }
+  },
+  "expected_digest": {
+    "received": 8,
+    "upserted": 4,
+    "drafted": 3,
+    "duplicates": 1,
+    "missing_data": 1,
+    "cold_logged": 2
+  }
+}

@@ -1,0 +1,9 @@
+From: billing@acme.example
+To: owner@smallbiz.example
+Subject: Invoice INV-1001 for August maintenance
+
+ACME Facilities Co
+Invoice Number: INV-1001
+Invoice Date: 2026-08-01
+Due Date: 2026-08-31
+Total Due: $1,250.00

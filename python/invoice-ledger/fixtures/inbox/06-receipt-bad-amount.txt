@@ -1,0 +1,7 @@
+From: noreply@staples.example
+Subject: Receipt from Staples
+
+Staples Supply Co
+Receipt Number: RCT-2003
+Date: 2026-09-18
+Amount Paid: about $55

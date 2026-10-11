@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "invoice-ledger"
+version = "0.1.0"
+description = "Watch a folder/inbox, parse invoices and receipts, and append them idempotently to a bookkeeping-ready CSV ledger — low-confidence items go to a review file with their reasons, overdue invoices get a draft chase."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+keywords = ["invoices", "receipts", "bookkeeping", "cli", "automation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+invoice-ledger = "invoice_ledger_cli:main"
+
+[tool.setuptools]
+py-modules = [
+    "invoice_ledger_cli",
+    "invoice_ledger_core",
+    "invoice_ledger_extract",
+    "invoice_ledger_ledger",
+    "invoice_ledger_parse",
+    "invoice_ledger_validate",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

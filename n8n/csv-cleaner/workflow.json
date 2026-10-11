@@ -1,0 +1,314 @@
+{
+  "name": "Clean a CSV batch: validate, dedupe, quarantine (demo)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Clean a CSV batch: validate, dedupe, quarantine (demo)\n\n**Who it's for:**  anyone importing messy CSVs — nothing drops silently; bad rows land in quarantine with a reason.\n\n**How it works:**  intake loads raw rows, validates email format and dedupes by email, routes clean rows forward and quarantines the rest with a reason, then digests the counts.\n\n**Setup:** ~2 minutes, zero credentials — import and click Test workflow.\n\n**Requirements:**  none for demo; production swaps intake for a file/Sheet read.\n\n**Customize:**  add validators in Process; write quarantine to a Sheet; port of the proven 100K-row pipeline pattern.\n\n*Sample build — internal demo, not client work.*",
+        "width": 360,
+        "height": 320,
+        "color": 4
+      },
+      "id": "s-Sticky Note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -360
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t-manual",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "t-sched",
+      "name": "Daily 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -40,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Triggers — two ways in\n\n**Manual** is for testing. **Daily 9:00** is the production shape. Swap the intake node for your real source — everything downstream stays.",
+        "width": 300,
+        "height": 160,
+        "color": 3
+      },
+      "id": "s-Sticky Note1",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n { json: { name: 'Ana',  email: 'ana@acme.example' } },\n { json: { name: 'Bo',   email: 'not-an-email' } },\n { json: { name: 'Cid',  email: 'cid@x.example' } },\n { json: { name: 'Ana2', email: 'ana@acme.example' } },\n { json: { name: '',     email: 'no@name.example' } },\n { json: { name: 'Dee',  email: 'dee@y.example' } }\n];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c-Intake: demo data",
+      "name": "Intake: demo data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nreturn $input.all().map(({ json: d }) => {\n  const badEmail = !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(d.email || '');\n  const noName = !d.name;\n  const dup = !badEmail && seen.has(d.email);\n  if (!badEmail) seen.add(d.email);\n  const reason = badEmail ? 'invalid email' : noName ? 'missing name'\n    : dup ? 'duplicate email' : 'clean';\n  return { json: { ...d, ok: !(badEmail || noName || dup), reason } };\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c-Process",
+      "name": "Process",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-Route",
+      "name": "Route",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\nreturn { json: { status: 'cleane',\n  summary: `${d.name} <${d.email}>` } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "c-Clean row",
+      "name": "Clean row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\nreturn { json: { status: 'alerted',\n  alert: `${d.email || '(no email)'}: ${d.reason}` } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "c-Quarantine",
+      "name": "Quarantine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "m-merge",
+      "name": "Merge branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1180,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One owner-facing summary per run. Keep AFTER Merge — two\n// branches fed in directly would execute this node twice.\nconst items = $input.all().map(i => i.json);\nconst ok = items.filter(i => i.status === 'cleane');\nconst bad = items.filter(i => i.status === 'alerted');\nconst detail = bad.map(i => '  - ' + (i.alert || i.summary || '')).join('\\n');\nreturn [{ json: { status: 'digest',\n  summary: `Run complete: ${ok.length} item(s) cleaned, ${bad.length} alert(s)`,\n  detail } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c-Digest to owner",
+      "name": "Digest to owner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Failure path — never silent\n\nAnything that can't be handled becomes an owner alert with a reason. In production this node is Slack or email to the ops owner.",
+        "width": 280,
+        "height": 150,
+        "color": 6
+      },
+      "id": "s-Sticky Note2",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        920,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Swap points\n\nReplace the demo Intake with your real source; replace the two Code outputs with real send/log nodes — payload shapes already match.",
+        "width": 300,
+        "height": 170,
+        "color": 6
+      },
+      "id": "s-Sticky Note3",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        -260
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Intake: demo data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 9:00": {
+      "main": [
+        [
+          {
+            "node": "Intake: demo data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intake: demo data": {
+      "main": [
+        [
+          {
+            "node": "Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process": {
+      "main": [
+        [
+          {
+            "node": "Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route": {
+      "main": [
+        [
+          {
+            "node": "Clean row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quarantine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean row": {
+      "main": [
+        [
+          {
+            "node": "Merge branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quarantine": {
+      "main": [
+        [
+          {
+            "node": "Merge branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge branches": {
+      "main": [
+        [
+          {
+            "node": "Digest to owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

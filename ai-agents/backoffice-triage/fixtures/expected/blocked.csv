@@ -1,0 +1,8 @@
+source_file,queue,reason
+01-email-refund-request.txt,billing,no approval row
+02-form-cancel-order.txt,shipping,no approval row
+05-email-invoice-question.txt,billing,no approval row
+06-form-feedback.txt,support,no approval row
+07-email-ambiguous.txt,support,no approval row
+08-message-password-reset.txt,security,no approval row
+10-form-complaint.txt,support,no approval row

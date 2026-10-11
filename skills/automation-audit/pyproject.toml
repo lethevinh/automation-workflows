@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automation-audit"
+version = "0.1.0"
+description = "Turn a described business process into a scoped spec, an ordered automation list and a rough effort estimate - the free-audit skill, with a credential-free deterministic lane."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+keywords = ["skills", "automation-audit", "free-audit", "scoping", "automation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+py-modules = [
+    "audit_lane",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

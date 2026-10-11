@@ -1,0 +1,6 @@
+From: accounts@initech.example
+Subject: Question about invoice INV-3031
+Date: 2026-09-26
+
+Could you explain the software line item on invoice INV-3031? It looks higher
+than the agreed rate.

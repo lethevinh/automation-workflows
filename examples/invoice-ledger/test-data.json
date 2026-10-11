@@ -1,0 +1,56 @@
+[
+  {
+    "source_file": "01-invoice-acme.txt",
+    "kind": "invoice",
+    "fields": { "invoice_no": "INV-1001", "issue_date": "2026-08-01", "due_date": "2026-08-31", "amount": "$1,250.00" },
+    "expected": { "verdict": "posted", "chase": true }
+  },
+  {
+    "source_file": "02-receipt-globex.txt",
+    "kind": "receipt",
+    "fields": { "receipt_no": "RCT-2001", "issue_date": "2026-09-12", "amount": "$86.40" },
+    "expected": { "verdict": "posted", "chase": false }
+  },
+  {
+    "source_file": "03-invoice-acme-duplicate.txt",
+    "kind": "invoice",
+    "fields": { "invoice_no": "INV-1001", "issue_date": "2026-08-01", "amount": "$1,250.00" },
+    "expected": { "verdict": "skipped", "reason": "duplicate of 'acme facilities co|INV-1001'" }
+  },
+  {
+    "source_file": "04-receipt-globex-duplicate.txt",
+    "kind": "receipt",
+    "fields": { "receipt_no": "RCT-2001", "issue_date": "2026-09-12", "amount": "$86.40" },
+    "expected": { "verdict": "skipped", "reason": "duplicate of 'globex corp|RCT-2001'" }
+  },
+  {
+    "source_file": "05-invoice-no-number.txt",
+    "kind": "invoice",
+    "fields": { "issue_date": "2026-09-05", "due_date": "2026-09-30", "amount": "$420.00" },
+    "expected": { "verdict": "reviewed", "reasons": ["missing invoice number"] }
+  },
+  {
+    "source_file": "06-receipt-bad-amount.txt",
+    "kind": "receipt",
+    "fields": { "receipt_no": "RCT-2003", "issue_date": "2026-09-18", "amount": "about $55" },
+    "expected": { "verdict": "reviewed", "reasons": ["amount not parseable"] }
+  },
+  {
+    "source_file": "07-invoice-bad-date.txt",
+    "kind": "invoice",
+    "fields": { "invoice_no": "INV-2001", "issue_date": "soon", "amount": "$950.00" },
+    "expected": { "verdict": "reviewed", "reasons": ["issue date not parseable"] }
+  },
+  {
+    "source_file": "08-invoice-umbrella.txt",
+    "kind": "invoice",
+    "fields": { "invoice_no": "INV-1002", "issue_date": "2026-09-15", "due_date": "2026-10-05", "amount": "$4,800.00" },
+    "expected": { "verdict": "posted", "chase": false }
+  },
+  {
+    "source_file": "09-receipt-initech.txt",
+    "kind": "receipt",
+    "fields": { "receipt_no": "RCT-2002", "issue_date": "2026-09-20", "amount": "€120.00", "currency": "EUR" },
+    "expected": { "verdict": "posted", "chase": false }
+  }
+]

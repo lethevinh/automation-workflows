@@ -1,0 +1,19 @@
+# classify.task.v1 — the LLM edge, used only when the deterministic router is
+# not confident. Returns one JSON object; no prose.
+
+Input:
+  subject: <one line>
+  body: <the message body>
+
+Decide the single best queue from: billing, shipping, security, support, general.
+
+Return exactly:
+  {"queue": "<queue>", "confidence": <0.0-1.0>, "reason": "<short reason>"}
+
+Rules:
+- "security" for access, login, password, account-lock or 2FA issues.
+- "billing" for invoices, charges, refunds or payment questions.
+- "shipping" for orders, tracking, delivery or warehouse questions.
+- "support" for complaints, defects, feedback or general help.
+- "general" only when nothing else fits.
+- confidence below 0.5 must say what is missing in "reason".

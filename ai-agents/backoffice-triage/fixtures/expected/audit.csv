@@ -1,0 +1,11 @@
+source_file,queue,action,needs_approval,outcome,approval_id,routed_as_of
+01-email-refund-request.txt,billing,"Reply: confirm the billing question about 'Duplicated charge on order #1042', attach the invoice/charge breakdown, offer a refund path if overcharged.",true,blocked,,2026-09-30
+02-form-cancel-order.txt,shipping,"Reply: locate the order 'Cancel order #1042 before it ships', provide tracking, confirm the delivery ETA.",true,blocked,,2026-09-30
+03-email-tracking.txt,shipping,"Reply: locate the order 'Where is my order #1042?', provide tracking, confirm the delivery ETA.",true,sent,APR-1001,2026-09-30
+04-message-login-locked.txt,security,"Reply: verify the requester's identity first, then unlock/reset access for 'Locked out of my account'; never send credentials in the reply.",true,sent,APR-1002,2026-09-30
+05-email-invoice-question.txt,billing,"Reply: confirm the billing question about 'Question about invoice INV-3031', attach the invoice/charge breakdown, offer a refund path if overcharged.",true,blocked,,2026-09-30
+06-form-feedback.txt,support,"Reply: acknowledge 'Feedback on the new checkout', ask for the missing detail, and route it to the right team.",true,blocked,,2026-09-30
+07-email-ambiguous.txt,support,"Reply: acknowledge 'Please help — it's urgent', ask for the missing detail, and route it to the right team.",true,blocked,,2026-09-30
+08-message-password-reset.txt,security,"Reply: verify the requester's identity first, then unlock/reset access for 'Password reset link not working'; never send credentials in the reply.",true,blocked,,2026-09-30
+09-email-vendor-confirmation.txt,shipping,"Reply: locate the order 'Restock shipment #S-88 is on the way', provide tracking, confirm the delivery ETA.",true,sent,APR-1003,2026-09-30
+10-form-complaint.txt,support,"Reply: acknowledge 'Product arrived defective', ask for the missing detail, and route it to the right team.",true,blocked,,2026-09-30

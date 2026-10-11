@@ -1,0 +1,7 @@
+From: billing@initech.example
+Subject: Invoice INV-2001
+
+Initech Services
+Invoice Number: INV-2001
+Invoice Date: soon
+Total Due: $950.00

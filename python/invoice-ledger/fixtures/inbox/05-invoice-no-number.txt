@@ -1,0 +1,7 @@
+From: billing@globex.example
+Subject: Invoice for September services
+
+GLOBEX Corp
+Invoice Date: 2026-09-05
+Due Date: 2026-09-30
+Total Due: $420.00

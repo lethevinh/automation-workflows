@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lethevinh/automation-workflows/zapier/lead-router/schema.json",
+  "title": "Zapier blueprint spec",
+  "description": "Structural contract for a spec.json Zapier blueprint: one trigger, an ordered step list where every step names its app, a failure branch with per-step idempotency, a declared scoring table and four test cases.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "platform",
+    "slug",
+    "title",
+    "buyer",
+    "trigger",
+    "steps",
+    "failure_branch",
+    "test_cases",
+    "scoring"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "platform": { "const": "zapier" },
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 10 },
+    "buyer": { "type": "string", "minLength": 10 },
+    "honest_limit": { "type": "string", "minLength": 20 },
+    "demand": {
+      "type": "object",
+      "required": ["themes", "source_ask"],
+      "properties": {
+        "themes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "signals", "paid"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "signals": { "type": "integer", "minimum": 0 },
+              "paid": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "source_ask": { "type": "string", "pattern": "^https?://" }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "required": ["id", "app", "event", "why", "idempotency"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+$" },
+        "app": { "type": "string", "minLength": 1 },
+        "event": { "type": "string", "minLength": 2 },
+        "why": { "type": "string", "minLength": 10 },
+        "idempotency": { "type": "string", "minLength": 10 }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "app", "action", "why", "idempotency"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+$" },
+          "app": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 3 },
+          "why": { "type": "string", "minLength": 10 },
+          "idempotency": { "type": "string", "minLength": 10 },
+          "side_effect": { "type": "boolean" }
+        }
+      }
+    },
+    "failure_branch": {
+      "type": "object",
+      "required": ["id", "app", "action", "detail", "idempotency"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+$" },
+        "app": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 3 },
+        "detail": { "type": "string", "minLength": 10 },
+        "idempotency": { "type": "string", "minLength": 10 },
+        "side_effect": { "type": "boolean" }
+      }
+    },
+    "test_cases": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["name", "input", "expected"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2 },
+          "input": { "type": "string", "minLength": 3 },
+          "expected": { "type": "string", "minLength": 3 }
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "required": ["derived_fields", "rules", "bands"],
+      "properties": {
+        "derived_fields": { "type": "object" },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["field", "op", "value", "points", "why"],
+            "properties": {
+              "field": { "type": "string", "minLength": 1 },
+              "op": { "enum": [">=", ">", "<=", "<", "==", "in", "present"] },
+              "points": { "type": "integer", "minimum": 0 },
+              "why": { "type": "string", "minLength": 3 }
+            }
+          }
+        },
+        "bands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "min", "route"],
+            "properties": {
+              "name": { "enum": ["hot", "nurture", "cold"] },
+              "min": { "type": "integer", "minimum": 0 },
+              "route": { "enum": ["crm_upsert_and_draft", "crm_upsert", "log_only"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

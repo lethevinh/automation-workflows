@@ -1,0 +1,6 @@
+[
+  { "invoice_no": "INV-1001", "pdf_file": "INV-1001.pdf", "customer_key": "acme" },
+  { "invoice_no": "INV-1002", "pdf_file": "INV-1002.pdf", "customer_key": "globex" },
+  { "invoice_no": "INV-1003", "pdf_file": "INV-1003.pdf", "customer_key": "unknown_co" },
+  { "invoice_no": "INV-1001", "pdf_file": "INV-1001.pdf", "customer_key": "acme" }
+]

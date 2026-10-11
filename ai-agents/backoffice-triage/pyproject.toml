@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "backoffice-triage"
+version = "0.1.0"
+description = "Route inbound email/form/message to a queue, draft the action, gate every send behind a human approval row, and write one audit row per route — with a credential-free mock-LLM lane."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+keywords = ["ai-agents", "triage", "routing", "human-in-the-loop", "cli", "automation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+bo-triage = "bo_triage_cli:main"
+
+[tool.setuptools]
+py-modules = [
+    "bo_triage_audit",
+    "bo_triage_cli",
+    "bo_triage_config",
+    "bo_triage_core",
+    "bo_triage_draft",
+    "bo_triage_route",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

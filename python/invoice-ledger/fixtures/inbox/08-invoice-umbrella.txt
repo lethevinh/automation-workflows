@@ -1,0 +1,8 @@
+From: ap@umbrella.example
+Subject: Invoice INV-1002 — October retainer
+
+Umbrella Corp
+Invoice Number: INV-1002
+Invoice Date: 2026-09-15
+Due Date: 2026-10-05
+Total Due: $4,800.00

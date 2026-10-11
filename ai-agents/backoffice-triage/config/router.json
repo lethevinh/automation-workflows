@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "queues": ["billing", "shipping", "security", "support", "general"],
+  "default_queue": "general",
+  "classifier_threshold": 0.75,
+  "rules": [
+    {
+      "pattern": "refund|overcharge|charged twice|duplicate charge|double charged",
+      "queue": "billing",
+      "strength": 0.95,
+      "reason": "refund/billing keywords"
+    },
+    {
+      "pattern": "invoice|statement|line item|amount due|payment due",
+      "queue": "billing",
+      "strength": 0.9,
+      "reason": "invoice/billing keywords"
+    },
+    {
+      "pattern": "\\border\\b|tracking|shipping|\\bship\\b|delivery|warehouse|restock",
+      "queue": "shipping",
+      "strength": 0.9,
+      "reason": "order/shipping keywords"
+    },
+    {
+      "pattern": "password|\\blogin\\b|locked|unlock|\\breset\\b|captcha|two-factor|2fa",
+      "queue": "security",
+      "strength": 0.95,
+      "reason": "access/security keywords"
+    },
+    {
+      "pattern": "defective|broken|not working|does not work|poor quality|complaint",
+      "queue": "support",
+      "strength": 0.85,
+      "reason": "complaint keywords"
+    },
+    {
+      "pattern": "feedback|suggestion|\\bthank",
+      "queue": "support",
+      "strength": 0.8,
+      "reason": "feedback keywords"
+    },
+    {
+      "pattern": "\\bhelp\\b|urgent|assistance|please assist",
+      "queue": "support",
+      "strength": 0.6,
+      "reason": "help keywords"
+    }
+  ],
+  "action_templates": {
+    "billing": "Reply: confirm the billing question about '{subject}', attach the invoice/charge breakdown, offer a refund path if overcharged.",
+    "shipping": "Reply: locate the order '{subject}', provide tracking, confirm the delivery ETA.",
+    "security": "Reply: verify the requester's identity first, then unlock/reset access for '{subject}'; never send credentials in the reply.",
+    "support": "Reply: acknowledge '{subject}', ask for the missing detail, and route it to the right team.",
+    "general": "Reply: acknowledge '{subject}', ask one clarifying question, then route it to the right queue."
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "platform": "zapier",
+  "slug": "lead-router",
+  "title": "Route new form and email leads into Close with dedupe, scoring and a review-gated follow-up",
+  "buyer": "An SMB or agency already on Zapier (post price-hike) whose website-form and inbox leads leak between tools and the CRM.",
+  "demand": {
+    "themes": [
+      { "name": "b2b lead list building", "signals": 82, "paid": 80 },
+      { "name": "crm setup and migration", "signals": 51, "paid": 51 }
+    ],
+    "source_ask": "https://upwork.com/freelance-jobs/apply/Zapier-Automations-and-Close-CRM_~022104996531857444489"
+  },
+  "trigger": {
+    "id": "t1",
+    "app": "Webhooks by Zapier",
+    "event": "Catch Hook",
+    "why": "A raw catch hook accepts any form, landing page or email parser's JSON, so one Zap serves every lead source instead of one Zap per source app.",
+    "idempotency": "The hook fires once per POST; the dedupe step below is what makes a re-delivered POST safe."
+  },
+  "steps": [
+    {
+      "id": "s1",
+      "app": "Formatter by Zapier",
+      "action": "Text > Lowercase, then Trim, on the email field",
+      "why": "Normalize the email once so dedupe and the CRM upsert key on the same value.",
+      "idempotency": "Pure transform - no side effect, safe on replay.",
+      "side_effect": false
+    },
+    {
+      "id": "s2",
+      "app": "Close",
+      "action": "Find Contact - search by the normalized email",
+      "why": "Read the CRM before writing to choose create vs update and to honor dedupe.",
+      "idempotency": "Read-only search.",
+      "side_effect": false
+    },
+    {
+      "id": "s3",
+      "app": "Formatter by Zapier",
+      "action": "Numbers > Spreadsheet-Style Formula, scoring the lead from the rule table in this spec's scoring.rules",
+      "why": "A declared rule table keeps routing explainable and re-testable; the offline replay evaluates the same table.",
+      "idempotency": "Pure transform.",
+      "side_effect": false
+    },
+    {
+      "id": "s4",
+      "app": "Paths by Zapier",
+      "action": "Route on the dedupe verdict and the score band",
+      "why": "Separates hot (write + draft), nurture (write), cold and duplicate (log only) without a second Zap.",
+      "idempotency": "Pure routing.",
+      "side_effect": false
+    },
+    {
+      "id": "s5",
+      "app": "Close",
+      "action": "Create Contact / Update Contact (upsert) keyed on the normalized email",
+      "why": "One contact record per lead; a re-run updates the same record instead of adding a duplicate.",
+      "idempotency": "Keyed on the normalized email - replayed runs converge on one record.",
+      "side_effect": true
+    },
+    {
+      "id": "s6",
+      "app": "Gmail",
+      "action": "Create Draft - the follow-up email, never sent",
+      "why": "Outreach stays human-approved; the Zap stages the draft and stops.",
+      "idempotency": "One draft per hot lead, keyed on the contact id.",
+      "side_effect": true
+    },
+    {
+      "id": "s7",
+      "app": "Slack",
+      "action": "Send Channel Message - the run digest",
+      "why": "One digest per run tells the owner exactly what moved.",
+      "idempotency": "The digest is emitted once per run, after routing settles.",
+      "side_effect": true
+    },
+    {
+      "id": "s8",
+      "app": "Google Sheets",
+      "action": "Create Spreadsheet Row - append the run-log row",
+      "why": "An append-only audit row per lead.",
+      "idempotency": "Keyed on lead id; duplicate verdicts are logged, never re-written to the CRM.",
+      "side_effect": true
+    }
+  ],
+  "failure_branch": {
+    "id": "e1",
+    "app": "Slack",
+    "action": "Custom error handler > Send Channel Message to the ops channel",
+    "detail": "Attach a Zapier error handler to s2, s5, s6 and s8. The handler posts the lead id, the failing step and the error text to the ops channel and stops the branch. An errored step emits no output, so downstream mappings are intentionally empty.",
+    "idempotency": "One alert per errored run; the handler does not retry the failed write."
+  },
+  "test_cases": [
+    {
+      "name": "happy path",
+      "input": "a complete lead: large company, a demo request, a phone and a long message",
+      "expected": "score lands in the hot band -> CRM upsert + Gmail draft + log row"
+    },
+    {
+      "name": "missing data",
+      "input": "a lead with a blank email",
+      "expected": "the missing-data branch alerts and writes nothing to the CRM"
+    },
+    {
+      "name": "duplicate",
+      "input": "a second lead carrying an email already seen in the same batch",
+      "expected": "the duplicate branch skips the CRM write and the draft"
+    },
+    {
+      "name": "failure alert",
+      "input": "the CRM search returns a 4xx",
+      "expected": "the error handler posts the alert to the ops channel and the branch stops"
+    }
+  ],
+  "scoring": {
+    "derived_fields": {
+      "message_length": "len(message)",
+      "phone": "true when phone is a non-empty string"
+    },
+    "rules": [
+      { "field": "company_size", "op": ">=", "value": 50, "points": 30, "why": "a company big enough to have a buying process" },
+      { "field": "source", "op": "in", "value": ["demo_request", "pricing_page"], "points": 25, "why": "bottom-of-funnel intent" },
+      { "field": "message_length", "op": ">=", "value": 80, "points": 20, "why": "a specific, written ask" },
+      { "field": "country", "op": "in", "value": ["US", "CA", "GB", "AU", "SG"], "points": 15, "why": "the serviceable sales territory" },
+      { "field": "phone", "op": "present", "value": true, "points": 10, "why": "a reachable lead" }
+    ],
+    "bands": [
+      { "name": "hot", "min": 55, "route": "crm_upsert_and_draft" },
+      { "name": "nurture", "min": 30, "route": "crm_upsert" },
+      { "name": "cold", "min": 0, "route": "log_only" }
+    ]
+  },
+  "honest_limit": "Zapier has no credential-free one-click demo. A public Zap template cannot contain Formatter, Paths, Code or Webhooks steps and never runs for a visitor without their own account, so this workflow ships as the owner's own Zap and the deterministic steps are proven by the offline replay (replay.py) over the bundled fixture. The Zapier test-mode screenshots are owner-supplied at publish."
+}

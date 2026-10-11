@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "demo_as_of": "2026-09-30",
+  "model": {
+    "classifier": "bo-triage-rules-v1",
+    "llm_endpoint": "",
+    "llm_model": "",
+    "note": "The shipped classifier is the deterministic rule table in router.json (the mock LLM). The live lane swaps in the endpoint/model above; prompts/ holds the versioned prompts for that edge."
+  },
+  "send_policy": {
+    "require_approval": true,
+    "approval_source": "approvals.csv",
+    "note": "Every outbound action needs a row in the approval source naming the message. There is no auto-send path: a message with no approval row is always blocked."
+  },
+  "paths": {
+    "inbox": "fixtures/inbox",
+    "output": "mock-out"
+  }
+}

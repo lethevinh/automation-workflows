@@ -1,0 +1,5 @@
+From: orders@supplier.example
+Subject: Restock shipment #S-88 is on the way
+Date: 2026-09-29
+
+Our warehouse has shipped restock order #S-88. Expected delivery is 2026-10-04.

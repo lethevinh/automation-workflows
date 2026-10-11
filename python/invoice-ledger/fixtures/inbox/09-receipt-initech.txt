@@ -1,0 +1,8 @@
+From: pos@initech.example
+Subject: Receipt RCT-2002
+
+Initech Services
+Receipt Number: RCT-2002
+Date: 2026-09-20
+Amount Paid: €120.00
+Currency: EUR

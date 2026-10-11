@@ -1,0 +1,58 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Invoice Emailer — Compose, Send, Alert",
+    "subtitle": "n8n workflow · zero-credential demo runs end-to-end on import",
+    "output": ".archify/workflow-invoice-emailer-20261009-2130/invoice-emailer.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "main", "label": "Main flow" },
+    { "id": "alt", "label": "Alt paths", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "load", "label": "Load + match", "fromCol": 0, "toCol": 1, "variant": "emphasis" },
+    { "id": "decide", "label": "Route", "fromCol": 2, "toCol": 3 },
+    { "id": "close", "label": "Digest", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["trigger", "lookup", "gate", "compose", "merge", "digest"],
+  "nodes": [
+    { "id": "trigger", "lane": "main", "col": 0, "type": "external", "label": "Invoice batch", "sublabel": "4 sample invoices", "tag": "zero credentials", "width": 150 },
+    { "id": "sched", "lane": "alt", "col": 0, "type": "cloud", "label": "Daily 9:00", "sublabel": "production shape", "width": 140 },
+    { "id": "lookup", "lane": "main", "col": 1, "type": "backend", "label": "Match + dedup", "sublabel": "customer map · seen set", "tag": "deterministic", "width": 158 },
+    { "id": "gate", "lane": "main", "col": 2, "type": "security", "label": "Sendable?", "sublabel": "sendable flag", "width": 138 },
+    { "id": "compose", "lane": "main", "col": 3, "type": "backend", "label": "Compose email", "sublabel": "to · subject · body", "width": 158 },
+    { "id": "alert", "lane": "alt", "col": 3, "type": "security", "label": "Alert owner", "sublabel": "reason-coded", "width": 150 },
+    { "id": "merge", "lane": "main", "col": 4, "type": "backend", "label": "Merge branches", "sublabel": "fires exactly once", "width": 150 },
+    { "id": "digest", "lane": "main", "col": 5, "type": "external", "label": "Owner digest", "sublabel": "N composed · M alerts", "width": 150 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "trigger", "to": "lookup", "variant": "default" },
+    { "id": "e2", "from": "sched", "to": "lookup", "label": "same row shape", "variant": "dashed", "role": "branch" },
+    { "id": "e3", "from": "lookup", "to": "gate", "variant": "emphasis" },
+    { "id": "e4", "from": "gate", "to": "compose", "label": "sendable", "variant": "emphasis" },
+    { "id": "e5", "from": "gate", "to": "alert", "label": "flagged", "variant": "security", "role": "error" },
+    { "id": "e6", "from": "compose", "to": "merge", "variant": "default" },
+    { "id": "e7", "from": "alert", "to": "merge", "variant": "dashed" },
+    { "id": "e8", "from": "merge", "to": "digest", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Why one digest",
+      "items": [
+        "Merge joins both branches so the owner gets exactly one summary per run",
+        "Unsent invoices carry a reason code — nothing skips silently"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Going live",
+      "items": [
+        "Swap the demo batch for a folder / Sheet read — same row shape",
+        "Add a Gmail / Send Email node after Compose; the payload already matches"
+      ]
+    }
+  ]
+}

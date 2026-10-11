@@ -1,0 +1,58 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "CSV Cleaner — Validate, Dedupe, Quarantine",
+    "subtitle": "n8n workflow · zero-credential demo runs end-to-end on import",
+    "output": ".archify/workflow-csv-cleaner-20261009-1618/csv-cleaner.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "main", "label": "Main flow" },
+    { "id": "alt", "label": "Alt paths", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "load", "label": "Load batch", "fromCol": 0, "toCol": 1 },
+    { "id": "decide", "label": "Validate + route", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "close", "label": "Digest", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["trigger", "process", "gate", "clean", "merge", "digest"],
+  "nodes": [
+    { "id": "trigger", "lane": "main", "col": 0, "type": "external", "label": "Demo batch", "sublabel": "6 sample rows", "tag": "zero credentials", "width": 150 },
+    { "id": "sched", "lane": "alt", "col": 0, "type": "cloud", "label": "Daily 9:00", "sublabel": "production shape", "width": 140 },
+    { "id": "process", "lane": "main", "col": 1, "type": "backend", "label": "Validate + dedupe", "sublabel": "email format · seen set", "tag": "deterministic", "width": 158 },
+    { "id": "gate", "lane": "main", "col": 2, "type": "security", "label": "Clean?", "sublabel": "ok flag", "width": 128 },
+    { "id": "clean", "lane": "main", "col": 3, "type": "backend", "label": "Clean row", "sublabel": "status: clean", "width": 150 },
+    { "id": "quarantine", "lane": "alt", "col": 3, "type": "security", "label": "Quarantine", "sublabel": "reason-coded", "width": 150 },
+    { "id": "merge", "lane": "main", "col": 4, "type": "backend", "label": "Merge branches", "sublabel": "fires exactly once", "width": 150 },
+    { "id": "digest", "lane": "main", "col": 5, "type": "external", "label": "Owner digest", "sublabel": "N cleaned · M alerts", "width": 150 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "trigger", "to": "process", "variant": "default" },
+    { "id": "e2", "from": "sched", "to": "process", "label": "same row shape", "variant": "dashed", "role": "branch" },
+    { "id": "e3", "from": "process", "to": "gate", "variant": "emphasis" },
+    { "id": "e4", "from": "gate", "to": "clean", "label": "clean", "variant": "emphasis" },
+    { "id": "e5", "from": "gate", "to": "quarantine", "label": "flagged", "variant": "security", "role": "error" },
+    { "id": "e6", "from": "clean", "to": "merge", "variant": "default" },
+    { "id": "e7", "from": "quarantine", "to": "merge", "variant": "dashed" },
+    { "id": "e8", "from": "merge", "to": "digest", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Why one digest",
+      "items": [
+        "Merge joins both branches so the owner gets exactly one summary per run",
+        "Quarantined rows carry a reason code — nothing drops silently"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Going live",
+      "items": [
+        "Swap the demo batch for a file / Sheet read — same row shape",
+        "Write the clean branch to a Sheet and the quarantine to an alert channel"
+      ]
+    }
+  ]
+}

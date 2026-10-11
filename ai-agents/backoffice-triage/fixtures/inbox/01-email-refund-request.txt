@@ -1,0 +1,6 @@
+From: customer@acme.example
+Subject: Duplicated charge on order #1042
+Date: 2026-09-27
+
+Hello, I was charged twice for order #1042 — the card shows two charges of
+$250.00 on 2026-09-25. Please refund the duplicate.

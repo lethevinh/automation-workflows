@@ -1,0 +1,8 @@
+[
+  { "name": "Ana", "email": "ana@acme.example" },
+  { "name": "Bo", "email": "not-an-email" },
+  { "name": "Cid", "email": "cid@x.example" },
+  { "name": "Ana2", "email": "ana@acme.example" },
+  { "name": "", "email": "no@name.example" },
+  { "name": "Dee", "email": "dee@y.example" }
+]

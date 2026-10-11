@@ -1,127 +1,89 @@
 # Automation Workflows — n8n, Zapier, Python & AI Agents
 
-> Automation systems — human-in-the-loop approvals where money or
-> reputation is at stake, deterministic core logic, and failure handling
-> designed in rather than bolted on. The repo runs on n8n with custom code
-> where a native node isn't enough — Make, Zapier or another stack when a
-> client's setup genuinely calls for it, including the jobs that really
-> are one simple "connect App A to App B" zap.
->
-> **Open for automation projects → [Get in touch](#hire-me)** ·
-> 🌐 [Portfolio site](https://lethevinh.github.io/)
+Automation systems — human-in-the-loop approvals where money or reputation is at
+stake, deterministic core logic, and failure handling designed in rather than
+bolted on. The repo runs on n8n with custom code where a native node is not
+enough — Make, Zapier or another stack when a client's setup genuinely calls for
+it, including the jobs that really are one simple "connect App A to App B" zap.
+
+Every pack ships a **zero-credential demo lane** — import and run, or
+`python3 <lane> --demo` — so you can see exactly what it does before a credential
+is involved anywhere.
+
+## What's in here
+
+Six artifacts, each solving one concrete, verifiable problem. They are grouped
+below by the buyer problem they fix; every card also carries its platform so you
+can filter by stack.
+
+### Your data and money ops eat your day
+
+| Pack | Platform | The problem it fixes | Outcome |
+| :--- | :--- | :--- | :--- |
+| [CSV Cleaner](n8n/csv-cleaner/) | n8n | Messy CSV imports from forms, suppliers and scrapers: blank names, bad emails, duplicate addresses — and spreadsheet formulas that silently drop the bad rows. | Every row is checked, clean rows flow forward, the rest land in a reason-coded quarantine, and you get exactly one summary per run. Nothing drops silently. |
+| [Invoice Emailer](n8n/invoice-emailer/) | n8n | Invoices matched to the wrong customer, or sent twice — and failed sends nobody notices until the customer does. | Every invoice is matched and deduped, send-ready payloads are composed, and every failure lands in a reason-coded owner alert with exactly one digest per run. |
+| [Invoice Ledger](python/invoice-ledger/) | Python CLI | Invoices and receipts arrive by email and get keyed into a sheet by hand — slow, error-prone, and overdue invoices only get chased when someone remembers. | Every file in the watched folder is parsed, validated and appended once to a bookkeeping-ready CSV ledger; low-confidence items go to a review file with a reason; overdue invoices get a chase draft that is never sent on its own. |
+
+### Leads and messages slip through the cracks
+
+| Pack | Platform | The problem it fixes | Outcome |
+| :--- | :--- | :--- | :--- |
+| [Lead Router](zapier/lead-router/) | Zapier | Website form and inbox leads leak between the form, the inbox and the CRM — written twice, or lost entirely. | Every lead is normalized, deduped and scored by a declared rule table; hot leads get a CRM upsert and a review-gated draft, the rest are logged with the reason, and the run ends with exactly one digest. |
+| [Back-Office Triage](ai-agents/backoffice-triage/) | AI agent setup | Inbound email, form and chat messages pile up overnight, and the morning is spent routing them instead of working them. | Every message is routed to one queue with a drafted next action, and **nothing is ever sent until a human approves it** — with one audit row per message so the whole day is reconstructable. |
+
+### You don't know what to automate first
+
+| Pack | Platform | The problem it fixes | Outcome |
+| :--- | :--- | :--- | :--- |
+| [Automation Audit](skills/automation-audit/) | Skills | "We should automate something" — but which process, in what scope, and at roughly what cost? A paid discovery call you haven't booked yet. | Paste a described business process and get back a scoped spec, an ordered automation list (quickest win first) and a rough effort estimate — deterministic, no model, no key, no network. |
+
+## The design rules behind every pack
+
+- **Human-in-the-loop where it counts.** Sends, approvals and anything with
+  money or reputation attached are gated; the machine drafts, the human decides.
+- **Deterministic core logic.** Same input, same verdict, every run — verifiable
+  in CI, not a black box.
+- **The failure path is a first-class output.** Quarantines, review files,
+  reason-coded alerts and owner digests exist as explicit branches, not silent
+  drops.
+- **Zero credentials to try.** Every pack has a demo lane that runs end-to-end
+  with nothing to configure.
+
+## Run them yourself
+
+Each pack README carries its own demo lane; the n8n and python packs also ship a
+per-pack input contract under [`examples/`](examples/), while `zapier/`,
+`ai-agents/` and `skills/` carry their fixtures inside the pack:
+
+```bash
+# n8n packs: import workflow.json, click "Test workflow"
+# zapier/lead-router
+cd zapier/lead-router && python3 replay.py
+# python/invoice-ledger
+cd python/invoice-ledger && python3 invoice_ledger_cli.py --demo
+# ai-agents/backoffice-triage (offline, mock LLM)
+cd ai-agents/backoffice-triage && python3 bo_triage_cli.py --mock-llm
+# skills/automation-audit
+cd skills/automation-audit && python3 audit_lane.py --self-check
+```
+
+All four deterministic lanes print `RESULT: PASS` against their bundled fixtures.
 
 ---
 
-## Why this repo exists
-
-Every business has repetitive work that silently eats hours: copying leads
-between tools, triaging inboxes, syncing spreadsheets, chasing invoices.
-This repo is where I publish the automations I design and run — real
-workflows, documented end to end, so you can see exactly how I work before
-you hire me.
-
-**Nothing here is a toy demo.** Each workflow ships with:
-
-- A problem statement and the outcome it targets
-- An architecture diagram and a documented setup path
-- A zero-credential demo lane — import, click **Test workflow**, watch it
-  route every branch
-- The same structure I deliver on paid projects
-
-## Featured workflows
-
-| Workflow | Platform | Use case | Highlights | Result (repo-verified) |
-|---|---|---|---|---|
-| [Client Report Generator](n8n/client-report-generator/) | n8n | Weekly per-client marketing reports | Meta Ads + Google Ads + GA4, config-sheet driven, branded HTML, draft-review mode | Pilot run: 16 report items, exactly 1 digest, alerts 3/3 — PASS · `retryOnFail` on 15/15 credentialed nodes |
-| [Promise Ledger](n8n/promise-ledger/) | n8n | Track promises made to you in email | AI extraction, chase drafts with approval gate, fulfillment detection | Pilot run: 5-item happy path, alerts 3/3 — PASS · `retryOnFail` on 19/19 credentialed nodes |
-| [FAQ Chatbot](n8n/faq-chatbot/) | n8n | Support chatbot that grows its own FAQ | Learns from misses — only with owner approval; lead capture | Pilot run: 6 visitor turns routed, digest exactly 1, 3/3 edge branches — PASS |
-| [Daily Cash Tally](n8n/daily-cash-tally/) | n8n | End-of-day till reconciliation | 30-day history scoring, repeat-offender escalation, quarantine lane | Demo run exercises all 5 branch routes — quarantine, escalation and gap alert included |
-| [Affiliate Intake](n8n/affiliate-intake/) | n8n | Screen affiliate applications | Editable rules, outreach drafts, zero-credential demo | Demo run: 6 applications → 2 qualified drafts + 4 reason-coded alerts, exactly 1 digest |
-
-Every n8n workflow runs its demo lane with **zero credentials** — import,
-click Test, watch it route every branch. All five exports are **sanitized
-for public sharing**: credential blocks, instance identifiers and pinned
-data stripped, with a CI check keeping them that way.
-
-<!-- owner-metric: business results per workflow (hours saved, spend
-     replaced, volume handled) — to be supplied by the owner for the
-     Result column -->
-
-**Platforms & APIs on display:** `n8n` (cloud & self-hosted) ·
-`Google Sheets` · `Gmail` · `Telegram` · `OpenAI` · `Meta Ads` /
-`Google Ads` / `GA4` / `Slack` over HTTP (Header & Custom Auth)
-
-**Differentiators on display:** human-in-the-loop approval gates ·
-idempotent writes (dedupe keys, `appendOrUpdate`) · quarantine lanes ·
-per-source failure isolation · retry/backoff policies (`retryOnFail`,
-`maxTries: 3`) · one-click zero-credential demo lanes
-
-*New workflows are added regularly — watch the repo to follow along.*
-
-## Services I offer
-
-| Service | What you get |
-|---|---|
-| **n8n workflow setup** | Design, build, and deploy your workflow — cloud or self-hosted |
-| **n8n self-hosting** | Docker/VPS deployment, queue mode, backups, monitoring |
-| **Workflow audit & rescue** | Fix brittle/broken workflows, add error handling and retries |
-| **Custom integrations** | Connect APIs that have no native nodes (Python/JS custom nodes) |
-| **AI agent pipelines** | LLM-powered classification, drafting, enrichment inside your stack |
-| **Ongoing maintenance** | Monitoring, alerting, versioned updates |
-
-## How I work
-
-1. **Discovery** — map your process, find the automation boundary
-2. **Spec** — you approve a written spec before I build anything
-3. **Build** — workflow + error handling + docs, in a shared workspace
-4. **Verify** — tested against sample data, then a real pilot run
-5. **Handoff** — you own everything: workflows, docs, credentials
-
-No black boxes. No lock-in. You can maintain it yourself, or keep me on
-retainer — your choice.
-
-## Repository structure
-
-| Folder | Contents |
-|---|---|
-| [`n8n/`](n8n/) | Five n8n workflows — `workflow.json` + archify diagrams + setup docs |
-| [`examples/`](examples/) | Per-workflow input contracts — `test-data.json` fixtures + expected verdicts for all five workflows |
-| [`zapier/`](zapier/) | Zapier automations — step-by-step docs + configs — *coming soon* |
-| [`python/`](python/) | Standalone scripts & pipelines — *coming soon* |
-| [`ai-agents/`](ai-agents/) | Agent setups — prompts, configs, orchestration — *coming soon* |
-| [`skills/`](skills/) | Reusable agent skills (SKILL.md format) — *coming soon* |
-| [`docs/`](docs/) | Repo docs — workflow README template, visual style guide, upgrade plan |
-| [`docs/case-studies/`](docs/case-studies/) | Deep-dives: problem → build → measured results — *first one in progress* |
-| [`scripts/`](scripts/) | Repo tooling — mermaid node-graph generator, archify extractor, export sanitizer, local CI runner |
-| [`.github/`](.github/) | CI — JSON validity, secret scan, sanitization residue, mermaid drift, placeholder & demo-lane checks |
-| [`.archify/`](.archify/) | archify project sources behind the committed `diagram.svg` files |
-
-Every workflow ships an
-[archify](https://github.com/tt-a1i/archify)-rendered architecture diagram
-(`assets/diagram.svg`, source `assets/diagram.json`) and a README in the
-[standard template](docs/workflow-template.md) order: problem → solution →
-stack & credentials → setup → verification → reliability & error handling →
-results & impact → sanitization notes.
-
-## Tech stack
-
-`n8n` · `Zapier` · `Make` · `Python` · `TypeScript` · `OpenAI / Anthropic`
-`PostgreSQL` · `Docker` · `Google Workspace` · `Airtable` · `Slack` · `Notion`
-
 ## Hire me
 
-I'm **Vinh Le** — I design and build automation systems for small
-businesses and solo founders who are drowning in manual work.
+I'm **Vinh Le** — I design and build automation systems for small businesses and
+solo founders who are drowning in manual work. Fixed-price, milestone-based
+projects: a defined brief, an agreed deadline, and a handover pack when the
+milestone is approved.
 
-- LinkedIn: [linkedin.com/in/lethevinh](https://www.linkedin.com/in/lethevinh)
-- GitHub: [github.com/lethevinh](https://github.com/lethevinh)
 - Email: [lethevinh.qng@gmail.com](mailto:lethevinh.qng@gmail.com)
-- Portfolio: [lethevinh.github.io](https://lethevinh.github.io/)
+- LinkedIn: [linkedin.com/in/lethevinh](https://www.linkedin.com/in/lethevinh)
+- Support & feedback: [GitHub Issues](https://github.com/lethevinh/automation-workflows/issues)
 
-The fastest way to start: send me 2–3 sentences about the process that's
-eating your time. I'll reply with what I'd automate and roughly how.
+Tell me the process that eats your week and I'll come back with a scoped,
+fixed-price quote — see the [case study](docs/case-studies/fixed-price-automation-service.md)
+for what that looks like.
 
-## License
-
-Code under [MIT](LICENSE). Workflow definitions and documentation may be
-used as reference; please don't resell the packaged templates as-is.
+<!-- owner-metric: years of experience · projects shipped · hours saved per client -->

@@ -1,0 +1,5 @@
+dedupe_key,document_kind,vendor,reference,issue_date,due_date,amount,currency,status,source_file
+acme facilities co|INV-1001,invoice,ACME Facilities Co,INV-1001,2026-08-01,2026-08-31,1250.00,USD,posted,01-invoice-acme.txt
+globex corp|RCT-2001,receipt,GLOBEX Corp,RCT-2001,2026-09-12,,86.40,USD,posted,02-receipt-globex.txt
+umbrella corp|INV-1002,invoice,Umbrella Corp,INV-1002,2026-09-15,2026-10-05,4800.00,USD,posted,08-invoice-umbrella.txt
+initech services|RCT-2002,receipt,Initech Services,RCT-2002,2026-09-20,,120.00,EUR,posted,09-receipt-initech.txt

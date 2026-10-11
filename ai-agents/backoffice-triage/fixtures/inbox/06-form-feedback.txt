@@ -1,0 +1,6 @@
+Form: feedback
+Subject: Feedback on the new checkout
+Field (page): /checkout
+
+The new checkout flow is a big improvement — one suggestion: remember my
+address for next time.

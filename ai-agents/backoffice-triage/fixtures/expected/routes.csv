@@ -1,0 +1,11 @@
+source_file,queue,confidence,classifier
+01-email-refund-request.txt,billing,0.95,rules
+02-form-cancel-order.txt,shipping,0.90,rules
+03-email-tracking.txt,shipping,0.90,rules
+04-message-login-locked.txt,security,0.95,rules
+05-email-invoice-question.txt,billing,0.90,rules
+06-form-feedback.txt,support,0.80,rules
+07-email-ambiguous.txt,support,0.90,llm-mock
+08-message-password-reset.txt,security,0.95,rules
+09-email-vendor-confirmation.txt,shipping,0.90,rules
+10-form-complaint.txt,support,0.85,rules

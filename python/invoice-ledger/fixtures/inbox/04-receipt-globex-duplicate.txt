@@ -1,0 +1,7 @@
+From: noreply@globex.example
+Subject: Receipt RCT-2001 copy
+
+GLOBEX Corp
+Receipt Number: RCT-2001
+Date: 2026-09-12
+Amount Paid: $86.40

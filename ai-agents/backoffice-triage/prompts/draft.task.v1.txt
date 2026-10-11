@@ -1,0 +1,15 @@
+# draft.task.v1 — the LLM edge for phrasing the next action of an approved
+# route. Returns the reply text only; the pipeline owns the approval gate.
+
+Input:
+  queue: <billing|shipping|security|support|general>
+  subject: <one line>
+  body: <the message body>
+
+Write the single next action as a short reply the operator can approve and send.
+
+Rules:
+- Plain text, no greeting flourishes, no invented facts.
+- Ask for the missing detail when the message is incomplete.
+- For "security", the first step is always identity verification.
+- Keep it under 90 words.

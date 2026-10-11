@@ -1,0 +1,6 @@
+From: customer@globex.example
+Subject: Where is my order #1042?
+Date: 2026-09-28
+
+The tracking link has said "label created" for three days. Can you tell me when
+order #1042 will arrive?
