@@ -787,7 +787,7 @@ anything — this is copy the owner reviews and sends.
 
 ---
 
-# PROMPT ALL-IN-ONE — toàn bộ việc còn lại, chạy tuần tự trong 1 agent
+# PROMPT ALL-IN-ONE — all remaining work, run sequentially in one agent
 
 > Paste the **SHARED PREAMBLE** above first, then this whole block.
 > Supersedes `PROMPT P0b`, `PROMPT P-1c`, `PROMPT P-1d`.

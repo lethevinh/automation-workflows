@@ -90,8 +90,8 @@ def mermaid_block(workflow: dict) -> str:
     for n in nodes:
         nid, kind = ids[n["name"]], kinds[n["name"]]
         label = node_label(n["name"])
-        l, r = SHAPES.get(kind, ('["', '"]'))
-        lines.append(f"    {nid}{l}{label}{r}")
+        left, right = SHAPES.get(kind, ('["', '"]'))
+        lines.append(f"    {nid}{left}{label}{right}")
 
     for src, conn in conns.items():
         if src not in ids:

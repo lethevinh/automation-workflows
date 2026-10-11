@@ -38,7 +38,7 @@ semantic pastel colors, mono type). Never hand-edit generated assets.
 
 ---
 
-```markdown
+````markdown
 # <Workflow Name>
 
 **Platform:** n8n · **Category:** <Lead Ops / Support / Data / Content>
@@ -106,4 +106,4 @@ data removed)>
 
 *Need something like this for your business?
 [Contact me](../../README.md#hire-me)*
-```
+````
