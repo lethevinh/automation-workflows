@@ -1,6 +1,7 @@
 # Promise Ledger — Track Promises Made to You, Chase Before They Go Cold
 
 **Platform:** n8n · **Category:** Founder Ops / Follow-up
+**Published on n8n:** [Track and chase email promises with Gmail, Google Sheets and OpenAI ↗](https://n8n.io/workflows/20510-track-and-chase-email-promises-with-gmail-google-sheets-and-openai/)
 **Outcome:** "I'll send it Friday" stops disappearing. Every promise lands
 in a ledger, drafts its own chase email, and closes itself when the person
 delivers.

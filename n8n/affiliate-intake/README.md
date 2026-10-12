@@ -1,6 +1,7 @@
 # Affiliate Intake — Application Screening & Outreach Drafting
 
 **Platform:** n8n · **Category:** Marketing / Partner Ops
+**Published on n8n:** [Screen affiliate applications and draft outreach with rules-based scoring ↗](https://n8n.io/workflows/20156-screen-affiliate-applications-and-draft-outreach-with-rules-based-scoring/)
 **Outcome:** Every application screened against your own rules — qualified
 applicants get a personalized outreach draft, the rest get a reason-coded
 alert, and you get exactly one digest per run.

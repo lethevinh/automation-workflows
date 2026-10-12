@@ -1,6 +1,7 @@
 # Invoice Emailer — Compose, Send & Alert the Owner on Failures
 
 **Platform:** n8n · **Category:** Invoicing & Billing
+**Published on n8n:** [Route invoice emails and owner digests from intake to Gmail and Slack ↗](https://n8n.io/workflows/19913-route-invoice-emails-and-owner-digests-from-intake-to-gmail-and-slack/)
 **Outcome:** Every invoice in a batch is matched to a customer and deduped — the
 clean ones become send-ready email payloads, the rest land in a reason-coded
 owner alert, and the run ends with exactly one digest so nothing goes out twice

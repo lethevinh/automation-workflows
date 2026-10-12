@@ -6,6 +6,7 @@
 ![demos: zero-credential](https://img.shields.io/badge/demos-zero--credential-2ea043)
 ![platforms: n8n · Zapier · Python · AI agents · Skills](https://img.shields.io/badge/platforms-n8n%20%7C%20Zapier%20%7C%20Python%20%7C%20AI%20agents%20%7C%20Skills-8957e5)
 [![portfolio site](https://img.shields.io/badge/portfolio-lethevinh.github.io-1f6feb)](https://lethevinh.github.io/)
+[![n8n templates](https://img.shields.io/badge/n8n-4%20templates-EA4B71)](https://n8n.io/creators/lethevinh/)
 
 Automation systems — human-in-the-loop approvals where money or reputation is at
 stake, deterministic core logic, and failure handling designed in rather than
@@ -23,6 +24,7 @@ is involved anywhere.
 | :--- | :--- |
 | Browse the whole catalogue | [What's in here](#whats-in-here) — 11 systems, grouped by the problem each fixes |
 | See it with screenshots and case studies | **[lethevinh.github.io](https://lethevinh.github.io/)** |
+| Install a template straight into n8n | **[n8n.io/creators/lethevinh](https://n8n.io/creators/lethevinh/)** — 4 published templates |
 | Run one with zero credentials | [Run them yourself](#run-them-yourself) |
 | Learn the design rules behind every pack | [The design rules](#the-design-rules-behind-every-pack) |
 | Hire me for a build | [Hire me](#hire-me) |
@@ -34,12 +36,15 @@ Python CLI, an AI-agent setup and a Skills pack. The six below are the current
 focus, grouped by the buyer problem they fix; every card also carries its
 platform so you can filter by stack.
 
+Four of the n8n packs are also published as installable templates — browse them
+on the [n8n creator page ↗](https://n8n.io/creators/lethevinh/).
+
 ### Your data and money ops eat your day
 
 | Pack | Platform | The problem it fixes | Outcome |
 | :--- | :--- | :--- | :--- |
 | [CSV Cleaner](n8n/csv-cleaner/) | n8n | Messy CSV imports from forms, suppliers and scrapers: blank names, bad emails, duplicate addresses — and spreadsheet formulas that silently drop the bad rows. | Every row is checked, clean rows flow forward, the rest land in a reason-coded quarantine, and you get exactly one summary per run. Nothing drops silently. |
-| [Invoice Emailer](n8n/invoice-emailer/) | n8n | Invoices matched to the wrong customer, or sent twice — and failed sends nobody notices until the customer does. | Every invoice is matched and deduped, send-ready payloads are composed, and every failure lands in a reason-coded owner alert with exactly one digest per run. |
+| [Invoice Emailer](n8n/invoice-emailer/) · [n8n ↗](https://n8n.io/workflows/19913-route-invoice-emails-and-owner-digests-from-intake-to-gmail-and-slack/) | n8n | Invoices matched to the wrong customer, or sent twice — and failed sends nobody notices until the customer does. | Every invoice is matched and deduped, send-ready payloads are composed, and every failure lands in a reason-coded owner alert with exactly one digest per run. |
 | [Invoice Ledger](python/invoice-ledger/) | Python CLI | Invoices and receipts arrive by email and get keyed into a sheet by hand — slow, error-prone, and overdue invoices only get chased when someone remembers. | Every file in the watched folder is parsed, validated and appended once to a bookkeeping-ready CSV ledger; low-confidence items go to a review file with a reason; overdue invoices get a chase draft that is never sent on its own. |
 
 ### Leads and messages slip through the cracks
@@ -62,11 +67,11 @@ diagram and node graph:
 
 | Pack | Platform | What it does |
 | :--- | :--- | :--- |
-| [Affiliate Intake](n8n/affiliate-intake/) | n8n | Screens partner applications against your own rules — a qualified applicant gets a personalized outreach draft, the rest a reason-coded alert, and you get exactly one digest per run. |
+| [Affiliate Intake](n8n/affiliate-intake/) · [n8n ↗](https://n8n.io/workflows/20156-screen-affiliate-applications-and-draft-outreach-with-rules-based-scoring/) | n8n | Screens partner applications against your own rules — a qualified applicant gets a personalized outreach draft, the rest a reason-coded alert, and you get exactly one digest per run. |
 | [Client Report Generator](n8n/client-report-generator/) | n8n | Meta Ads + Google Ads + GA4 → week-over-week deltas → an AI-written branded report delivered per client through Gmail and/or Slack, driven entirely from a config sheet. |
 | [Daily Cash Tally](n8n/daily-cash-tally/) | n8n | A till cash-leak monitor: not just "was today short", but the drawer that comes up short *every week* — caught and escalated to a different channel. |
-| [FAQ Chatbot](n8n/faq-chatbot/) | n8n | A public chatbot that answers only from your FAQ — and turns every unanswered question into next week's better FAQ, after you approve it. |
-| [Promise Ledger](n8n/promise-ledger/) | n8n | "I'll send it Friday" stops disappearing: every promise lands in a ledger, drafts its own chase email, and closes itself when the person delivers. |
+| [FAQ Chatbot](n8n/faq-chatbot/) · [n8n ↗](https://n8n.io/workflows/20309-answer-visitor-questions-and-grow-the-faq-with-openai-google-sheets-and-gmail/) | n8n | A public chatbot that answers only from your FAQ — and turns every unanswered question into next week's better FAQ, after you approve it. |
+| [Promise Ledger](n8n/promise-ledger/) · [n8n ↗](https://n8n.io/workflows/20510-track-and-chase-email-promises-with-gmail-google-sheets-and-openai/) | n8n | "I'll send it Friday" stops disappearing: every promise lands in a ledger, drafts its own chase email, and closes itself when the person delivers. |
 
 ## The design rules behind every pack
 

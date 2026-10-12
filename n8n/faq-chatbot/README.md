@@ -1,6 +1,7 @@
 # FAQ Chatbot — Answers Visitors and Grows Its Own FAQ (With Approval)
 
 **Platform:** n8n · **Category:** AI / Customer Support
+**Published on n8n:** [Answer visitor questions and grow the FAQ with OpenAI, Google Sheets and Gmail ↗](https://n8n.io/workflows/20309-answer-visitor-questions-and-grow-the-faq-with-openai-google-sheets-and-gmail/)
 **Outcome:** A public chatbot that answers only from your FAQ — and turns
 every unanswered question into next week's better FAQ, but only after you
 approve it.
